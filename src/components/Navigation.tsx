@@ -47,6 +47,7 @@ export function Navigation() {
     { href: '/', label: 'Dashboard' },
     { href: '/analytics', label: 'Analytics' },
     { href: '/calculator', label: 'Calculator' },
+    { href: '/audit', label: 'Audit Log' },
     { href: '/archive', label: 'Archive' },
     { href: '/import', label: 'Import' },
     { href: '/campaigns/new', label: 'New Campaign' },
