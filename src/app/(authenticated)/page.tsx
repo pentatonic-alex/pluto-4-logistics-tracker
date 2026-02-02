@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { CampaignCard } from '@/components/CampaignCard';
 import type { Campaign } from '@/types';
 
-type FilterTab = 'active' | 'completed' | 'all';
+type FilterTab = 'active' | 'all';
 
 export default function DashboardPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [completedCount, setCompletedCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<FilterTab>('active');
@@ -34,13 +35,28 @@ export default function DashboardPage() {
     }
   }, [activeTab]);
 
+  // Fetch completed count for archive link
+  useEffect(() => {
+    async function fetchCompletedCount() {
+      try {
+        const response = await fetch('/api/campaigns?status=completed');
+        if (response.ok) {
+          const data = await response.json();
+          setCompletedCount(data.campaigns.length);
+        }
+      } catch {
+        // Silently fail - not critical
+      }
+    }
+    fetchCompletedCount();
+  }, []);
+
   useEffect(() => {
     fetchCampaigns();
   }, [fetchCampaigns]);
 
   const tabs: { key: FilterTab; label: string }[] = [
     { key: 'active', label: 'Active' },
-    { key: 'completed', label: 'Completed' },
     { key: 'all', label: 'All' },
   ];
 
@@ -141,21 +157,17 @@ export default function DashboardPage() {
               </svg>
             </div>
             <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-1">
-              {activeTab === 'completed' ? 'No completed campaigns' : activeTab === 'active' ? 'No active campaigns' : 'No campaigns yet'}
+              {activeTab === 'active' ? 'No active campaigns' : 'No campaigns yet'}
             </h3>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-              {activeTab === 'active' || activeTab === 'all'
-                ? 'Create your first campaign to start tracking material.'
-                : 'Completed campaigns will appear here.'}
+              Create your first campaign to start tracking material.
             </p>
-            {(activeTab === 'active' || activeTab === 'all') && (
-              <Link
-                href="/campaigns/new"
-                className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-              >
-                Create a campaign →
-              </Link>
-            )}
+            <Link
+              href="/campaigns/new"
+              className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+            >
+              Create a campaign →
+            </Link>
           </div>
         </div>
       ) : (
@@ -163,6 +175,21 @@ export default function DashboardPage() {
           {campaigns.map((campaign) => (
             <CampaignCard key={campaign.id} campaign={campaign} />
           ))}
+        </div>
+      )}
+
+      {/* Archive link */}
+      {!loading && !error && completedCount > 0 && activeTab === 'active' && (
+        <div className="mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+          <Link
+            href="/archive"
+            className="inline-flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+            View {completedCount} completed campaign{completedCount !== 1 ? 's' : ''} in archive →
+          </Link>
         </div>
       )}
     </div>

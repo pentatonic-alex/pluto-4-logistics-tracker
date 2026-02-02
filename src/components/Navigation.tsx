@@ -35,6 +35,16 @@ export function Navigation() {
                 Dashboard
               </Link>
               <Link
+                href="/archive"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isActive('/archive')
+                    ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                }`}
+              >
+                Archive
+              </Link>
+              <Link
                 href="/campaigns/new"
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   isActive('/campaigns/new')
