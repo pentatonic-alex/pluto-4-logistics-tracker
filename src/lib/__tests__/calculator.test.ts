@@ -94,6 +94,29 @@ describe('calculator', () => {
         noBufferResult.requiredInputKg
       );
     });
+
+    it('should handle zero yields without producing Infinity', () => {
+      const zeroYields: YieldAssumptions = {
+        granulation: 0,
+        metalRemoval: 0,
+        purification: 0,
+        extrusion: 0,
+        contaminationBuffer: 0,
+      };
+
+      const result = calculateRequiredInput(100, 3, zeroYields);
+
+      // Should produce a finite number (clamped to 1% minimum yield)
+      expect(Number.isFinite(result.requiredInputKg)).toBe(true);
+      expect(result.requiredInputKg).toBeGreaterThan(0);
+    });
+
+    it('should handle very large numbers', () => {
+      const result = calculateRequiredInput(1000000, 3, defaultYields);
+
+      expect(Number.isFinite(result.requiredInputKg)).toBe(true);
+      expect(result.requiredInputKg).toBeGreaterThan(0);
+    });
   });
 
   describe('calculatePossibleOutput (reverse calculation)', () => {

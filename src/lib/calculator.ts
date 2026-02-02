@@ -75,6 +75,7 @@ export function calculateRequiredInput(
   materialPerUnit: number,
   yields: YieldAssumptions
 ): ForwardCalculationResult {
+  // Guard against invalid inputs
   if (targetUnits <= 0 || materialPerUnit <= 0) {
     return {
       requiredInputKg: 0,
@@ -84,16 +85,26 @@ export function calculateRequiredInput(
     };
   }
 
+  // Guard against zero/invalid yields (would cause division by zero)
+  const MIN_YIELD = 0.01; // 1% minimum
+  const safeYields = {
+    granulation: Math.max(yields.granulation, MIN_YIELD),
+    metalRemoval: Math.max(yields.metalRemoval, MIN_YIELD),
+    purification: Math.max(yields.purification, MIN_YIELD),
+    extrusion: Math.max(yields.extrusion, MIN_YIELD),
+    contaminationBuffer: Math.max(0, Math.min(yields.contaminationBuffer, 0.99)),
+  };
+
   const finishedMaterial = targetUnits * materialPerUnit;
 
   // Work backwards through the chain (divide by yield at each step)
-  const afterExtrusion = finishedMaterial / yields.extrusion;
-  const afterPurification = afterExtrusion / yields.purification;
-  const afterMetalRemoval = afterPurification / yields.metalRemoval;
-  const afterGranulation = afterMetalRemoval / yields.granulation;
+  const afterExtrusion = finishedMaterial / safeYields.extrusion;
+  const afterPurification = afterExtrusion / safeYields.purification;
+  const afterMetalRemoval = afterPurification / safeYields.metalRemoval;
+  const afterGranulation = afterMetalRemoval / safeYields.granulation;
 
   // Add contamination buffer
-  const withBuffer = afterGranulation * (1 + yields.contaminationBuffer);
+  const withBuffer = afterGranulation * (1 + safeYields.contaminationBuffer);
 
   // CO2e savings
   const co2eSaved = targetUnits * CALCULATOR_DEFAULTS.co2e.savingsPerUnit;
