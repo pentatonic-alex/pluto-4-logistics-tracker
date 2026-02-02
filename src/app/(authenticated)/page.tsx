@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { CampaignCard } from '@/components/CampaignCard';
 import { SkeletonCampaignCard } from '@/components/ui/Skeleton';
+import { ExportButton } from '@/components/ExportButton';
 import type { Campaign } from '@/types';
 
 type FilterTab = 'active' | 'all';
@@ -73,15 +74,23 @@ export default function DashboardPage() {
             Track material through the supply chain
           </p>
         </div>
-        <Link
-          href="/campaigns/new"
-          className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors inline-flex items-center justify-center gap-2 w-full sm:w-auto"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          New Campaign
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <ExportButton
+            statusFilter={activeTab === 'active' ? 'active' : undefined}
+            label="Export All"
+            variant="secondary"
+            className="w-full sm:w-auto"
+          />
+          <Link
+            href="/campaigns/new"
+            className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors inline-flex items-center justify-center gap-2 w-full sm:w-auto"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New Campaign
+          </Link>
+        </div>
       </div>
 
       {/* Filter tabs */}

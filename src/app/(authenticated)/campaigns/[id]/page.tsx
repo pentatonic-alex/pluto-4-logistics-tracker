@@ -6,6 +6,7 @@ import { getEventsForStream } from '@/lib/events';
 import { isValidCampaignId } from '@/lib/ids';
 import { EventTimeline } from '@/components/EventTimeline';
 import { StatusBadge } from '@/components/StatusBadge';
+import { ExportButton } from '@/components/ExportButton';
 import type { Campaign } from '@/types';
 
 interface PageProps {
@@ -115,17 +116,25 @@ export default async function CampaignDetailPage({ params }: PageProps) {
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
           Event History
         </h2>
-        {campaign.status !== 'completed' && (
-          <Link
-            href={`/campaigns/${id}/log`}
-            className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors inline-flex items-center justify-center gap-2 w-full sm:w-auto"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Log Event
-          </Link>
-        )}
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <ExportButton
+            campaignId={id}
+            label="Export"
+            variant="secondary"
+            className="w-full sm:w-auto"
+          />
+          {campaign.status !== 'completed' && (
+            <Link
+              href={`/campaigns/${id}/log`}
+              className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors inline-flex items-center justify-center gap-2 w-full sm:w-auto"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Log Event
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Event timeline */}
