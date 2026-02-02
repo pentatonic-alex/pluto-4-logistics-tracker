@@ -129,8 +129,9 @@ export function SearchBar({ className = '' }: SearchBarProps) {
       case 'Enter':
         e.preventDefault();
         if (selectedIndex >= 0 && selectedIndex < itemCount) {
-          const item = displayItems[selectedIndex];
-          navigateToCampaign('campaignId' in item ? item.campaignId : item.campaignId);
+          // Both SearchResult and Suggestion have campaignId
+          const item = displayItems[selectedIndex] as { campaignId: string };
+          navigateToCampaign(item.campaignId);
         }
         break;
       case 'Escape':

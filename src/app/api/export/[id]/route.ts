@@ -55,8 +55,8 @@ export async function GET(
     // Generate filename
     const filename = generateExportFilename(campaign.legoCampaignCode);
 
-    // Return Excel file
-    return new NextResponse(buffer, {
+    // Return Excel file (convert Buffer to Uint8Array for TypeScript compatibility)
+    return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
         'Content-Type':

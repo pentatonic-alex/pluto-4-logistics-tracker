@@ -213,7 +213,7 @@ function buildInboundShipmentRows(
   campaigns: Campaign[],
   eventsMap: Map<string, BaseEvent[]>
 ): unknown[][] {
-  const rows: unknown[][] = [HEADERS.INBOUND_SHIPMENT];
+  const rows: unknown[][] = [[...HEADERS.INBOUND_SHIPMENT]];
 
   for (const campaign of campaigns) {
     const events = eventsMap.get(campaign.id) || [];
@@ -252,7 +252,7 @@ function buildGranulationRows(
   campaigns: Campaign[],
   eventsMap: Map<string, BaseEvent[]>
 ): unknown[][] {
-  const rows: unknown[][] = [HEADERS.GRANULATION];
+  const rows: unknown[][] = [[...HEADERS.GRANULATION]];
 
   for (const campaign of campaigns) {
     const events = eventsMap.get(campaign.id) || [];
@@ -294,7 +294,7 @@ function buildMetalRemovalRows(
   campaigns: Campaign[],
   eventsMap: Map<string, BaseEvent[]>
 ): unknown[][] {
-  const rows: unknown[][] = [HEADERS.METAL_REMOVAL];
+  const rows: unknown[][] = [[...HEADERS.METAL_REMOVAL]];
 
   for (const campaign of campaigns) {
     const events = eventsMap.get(campaign.id) || [];
@@ -332,7 +332,7 @@ function buildPolymerPurificationRows(
   campaigns: Campaign[],
   eventsMap: Map<string, BaseEvent[]>
 ): unknown[][] {
-  const rows: unknown[][] = [HEADERS.POLYMER_PURIFICATION];
+  const rows: unknown[][] = [[...HEADERS.POLYMER_PURIFICATION]];
 
   for (const campaign of campaigns) {
     const events = eventsMap.get(campaign.id) || [];
@@ -375,7 +375,7 @@ function buildExtrusionRows(
   campaigns: Campaign[],
   eventsMap: Map<string, BaseEvent[]>
 ): unknown[][] {
-  const rows: unknown[][] = [HEADERS.EXTRUSION];
+  const rows: unknown[][] = [[...HEADERS.EXTRUSION]];
 
   for (const campaign of campaigns) {
     const events = eventsMap.get(campaign.id) || [];
@@ -415,7 +415,7 @@ function buildTransferRows(
   campaigns: Campaign[],
   eventsMap: Map<string, BaseEvent[]>
 ): unknown[][] {
-  const rows: unknown[][] = [HEADERS.TRANSFER_MBA_RGE];
+  const rows: unknown[][] = [[...HEADERS.TRANSFER_MBA_RGE]];
 
   for (const campaign of campaigns) {
     const events = eventsMap.get(campaign.id) || [];
@@ -444,7 +444,7 @@ function buildManufacturingRows(
   campaigns: Campaign[],
   eventsMap: Map<string, BaseEvent[]>
 ): unknown[][] {
-  const rows: unknown[][] = [HEADERS.RGE_MANUFACTURING];
+  const rows: unknown[][] = [[...HEADERS.RGE_MANUFACTURING]];
 
   for (const campaign of campaigns) {
     const events = eventsMap.get(campaign.id) || [];

@@ -88,8 +88,8 @@ export async function GET(request: NextRequest) {
     // Generate filename
     const filename = generateExportFilename();
 
-    // Return Excel file
-    return new NextResponse(buffer, {
+    // Return Excel file (convert Buffer to Uint8Array for TypeScript compatibility)
+    return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
         'Content-Type':
