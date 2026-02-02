@@ -17,6 +17,20 @@ import type {
 import { getEventsForStream } from './events';
 
 /**
+ * Search Result
+ * 
+ * Returned from searchCampaigns() with match context.
+ */
+export interface SearchResult {
+  campaignId: string;
+  legoCampaignCode: string;
+  status: CampaignStatus;
+  description: string | null;
+  matchedField: 'campaign_id' | 'lego_code' | 'description' | 'tracking' | 'po';
+  matchedValue: string;
+}
+
+/**
  * Projection Updater
  * 
  * Updates campaign projections based on events.
@@ -433,6 +447,94 @@ export async function getCampaigns(statusFilter?: CampaignStatus | 'active'): Pr
   }
   
   return rows.map(mapRowToCampaign);
+}
+
+/**
+ * Search campaigns by query string
+ * 
+ * Searches across:
+ * - Campaign ID (cmp_xxx)
+ * - LEGO campaign code
+ * - Description
+ * - Tracking numbers (from event JSONB)
+ * - PO numbers (from event JSONB)
+ * 
+ * Returns deduplicated results with match context.
+ * Minimum query length: 2 characters
+ * Maximum results: 20
+ */
+export async function searchCampaigns(query: string): Promise<SearchResult[]> {
+  // Validate query length
+  if (!query || query.trim().length < 2) {
+    return [];
+  }
+
+  const searchPattern = `%${query.trim()}%`;
+
+  // Combined query using UNION for efficiency
+  // Search projections (id, lego_code, description) + event JSONB (tracking, po)
+  const rows = await sql`
+    WITH projection_matches AS (
+      SELECT 
+        id,
+        lego_campaign_code,
+        status,
+        description,
+        CASE 
+          WHEN id ILIKE ${searchPattern} THEN 'campaign_id'
+          WHEN lego_campaign_code ILIKE ${searchPattern} THEN 'lego_code'
+          ELSE 'description'
+        END as match_type,
+        CASE 
+          WHEN id ILIKE ${searchPattern} THEN id
+          WHEN lego_campaign_code ILIKE ${searchPattern} THEN lego_campaign_code
+          ELSE description
+        END as match_value
+      FROM campaign_projections 
+      WHERE id ILIKE ${searchPattern} 
+         OR lego_campaign_code ILIKE ${searchPattern} 
+         OR description ILIKE ${searchPattern}
+    ),
+    tracking_matches AS (
+      SELECT DISTINCT 
+        cp.id,
+        cp.lego_campaign_code,
+        cp.status,
+        cp.description,
+        'tracking' as match_type,
+        e.event_data->>'trackingRef' as match_value
+      FROM events e
+      JOIN campaign_projections cp ON cp.id = e.stream_id
+      WHERE e.event_data->>'trackingRef' ILIKE ${searchPattern}
+    ),
+    po_matches AS (
+      SELECT DISTINCT 
+        cp.id,
+        cp.lego_campaign_code,
+        cp.status,
+        cp.description,
+        'po' as match_type,
+        e.event_data->>'poNumber' as match_value
+      FROM events e
+      JOIN campaign_projections cp ON cp.id = e.stream_id
+      WHERE e.event_data->>'poNumber' ILIKE ${searchPattern}
+    )
+    SELECT * FROM projection_matches
+    UNION
+    SELECT * FROM tracking_matches
+    UNION
+    SELECT * FROM po_matches
+    LIMIT 20
+  `;
+
+  return rows.map((row) => ({
+    campaignId: row.id as string,
+    legoCampaignCode: row.lego_campaign_code as string,
+    status: row.status as CampaignStatus,
+    description: row.description as string | null,
+    matchedField: row.match_type as SearchResult['matchedField'],
+    matchedValue: row.match_value as string,
+  }));
 }
 
 /**

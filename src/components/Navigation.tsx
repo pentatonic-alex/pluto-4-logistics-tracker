@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { useTheme } from '@/components/ThemeProvider';
+import { SearchBar } from '@/components/SearchBar';
 
 function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -82,8 +83,9 @@ export function Navigation() {
             </div>
           </div>
 
-          {/* Desktop theme toggle and sign out */}
-          <div className="hidden md:flex items-center gap-2">
+          {/* Desktop search and actions */}
+          <div className="hidden md:flex items-center gap-4">
+            <SearchBar className="w-64" />
             <ThemeToggle />
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}
