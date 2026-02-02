@@ -13,6 +13,7 @@
 import * as readline from 'readline';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
 const rl = readline.createInterface({
@@ -46,7 +47,7 @@ async function main() {
   const password = await question('Choose a password: ');
 
   // Generate secret
-  const secret = require('crypto').randomBytes(32).toString('base64');
+  const secret = crypto.randomBytes(32).toString('base64');
 
   // Hash password
   const passwordHash = await bcrypt.hash(password, 10);

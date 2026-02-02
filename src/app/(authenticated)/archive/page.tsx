@@ -18,8 +18,8 @@ export default function ArchivePage() {
         if (!response.ok) throw new Error('Failed to fetch campaigns');
         const data = await response.json();
         setCampaigns(data.campaigns);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'An error occurred');
       } finally {
         setLoading(false);
       }

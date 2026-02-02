@@ -130,7 +130,7 @@ export default function NewCampaignPage() {
 
       showToast('success', 'Campaign created successfully');
       router.push(`/campaigns/${data.campaignId}`);
-    } catch (err) {
+    } catch {
       // Network error
       showToast('error', 'Unable to connect to server. Please check your connection.', 'Network Error');
       setLoading(false);
