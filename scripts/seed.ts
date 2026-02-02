@@ -4,8 +4,12 @@
  * Creates campaigns at each stage of the logistics process:
  * LEGO Warehouse → MBA (Compounder) → RGE (Manufacturer) → LEGO Warehouse
  * 
- * Run with: npx tsx scripts/seed.ts
+ * Run with: npx tsx --env-file=.env.local scripts/seed.ts
  */
+
+// Load environment variables BEFORE importing db module
+// Use require to ensure synchronous execution before imports
+require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env.local') });
 
 import { sql } from '../src/lib/db';
 import { appendEvent } from '../src/lib/events';
@@ -76,9 +80,9 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
       {
         eventType: 'InboundShipmentRecorded',
         eventData: {
-          grossWeightKg: 5250,
-          netWeightKg: 5100,
-          estimatedAbsKg: 4800,
+          grossWeightKg: 23000,
+          netWeightKg: 22500,
+          estimatedAbsKg: 21500,
           carrier: 'DHL Freight',
           trackingRef: 'DHL-UK-2025-78234',
           shipDate: dateDaysAgo(10),
@@ -107,9 +111,9 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
       {
         eventType: 'InboundShipmentRecorded',
         eventData: {
-          grossWeightKg: 8400,
-          netWeightKg: 8200,
-          estimatedAbsKg: 7800,
+          grossWeightKg: 25000,
+          netWeightKg: 24500,
+          estimatedAbsKg: 23500,
           carrier: 'Schenker',
           trackingRef: 'SCH-DE-2025-45123',
           shipDate: dateDaysAgo(28),
@@ -121,8 +125,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'GranulationCompleted',
         eventData: {
           ticketNumber: 'MBA-GRN-2025-0234',
-          startingWeightKg: 8200,
-          outputWeightKg: 7950,
+          startingWeightKg: 24500,
+          outputWeightKg: 23275,
           processHours: 16,
           contaminationNotes: 'Minor paper contamination removed',
         },
@@ -149,9 +153,9 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
       {
         eventType: 'InboundShipmentRecorded',
         eventData: {
-          grossWeightKg: 6800,
-          netWeightKg: 6600,
-          estimatedAbsKg: 6200,
+          grossWeightKg: 24000,
+          netWeightKg: 23500,
+          estimatedAbsKg: 22500,
           carrier: 'Geodis',
           trackingRef: 'GEO-FR-2025-91234',
           shipDate: dateDaysAgo(43),
@@ -163,8 +167,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'GranulationCompleted',
         eventData: {
           ticketNumber: 'MBA-GRN-2025-0198',
-          startingWeightKg: 6600,
-          outputWeightKg: 6400,
+          startingWeightKg: 23500,
+          outputWeightKg: 22325,
           processHours: 12,
           contaminationNotes: 'Clean batch',
         },
@@ -174,8 +178,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'MetalRemovalCompleted',
         eventData: {
           ticketNumber: 'MBA-MTL-2025-0198',
-          startingWeightKg: 6400,
-          outputWeightKg: 6380,
+          startingWeightKg: 22325,
+          outputWeightKg: 21209,
           processHours: 4,
           notes: 'Minimal metal content detected',
         },
@@ -202,9 +206,9 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
       {
         eventType: 'InboundShipmentRecorded',
         eventData: {
-          grossWeightKg: 4200,
-          netWeightKg: 4050,
-          estimatedAbsKg: 3800,
+          grossWeightKg: 28000,
+          netWeightKg: 27500,
+          estimatedAbsKg: 26500,
           carrier: 'PostNL',
           trackingRef: 'PNL-NL-2025-12789',
           shipDate: dateDaysAgo(58),
@@ -216,8 +220,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'GranulationCompleted',
         eventData: {
           ticketNumber: 'MBA-GRN-2025-0156',
-          startingWeightKg: 4050,
-          outputWeightKg: 3920,
+          startingWeightKg: 27500,
+          outputWeightKg: 26125,
           processHours: 8,
           contaminationNotes: 'Some non-LEGO plastic removed',
         },
@@ -227,8 +231,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'MetalRemovalCompleted',
         eventData: {
           ticketNumber: 'MBA-MTL-2025-0156',
-          startingWeightKg: 3920,
-          outputWeightKg: 3900,
+          startingWeightKg: 26125,
+          outputWeightKg: 24819,
           processHours: 3,
           notes: 'Standard processing',
         },
@@ -238,8 +242,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'PolymerPurificationCompleted',
         eventData: {
           ticketNumber: 'MBA-PUR-2025-0156',
-          startingWeightKg: 3900,
-          outputWeightKg: 3750,
+          startingWeightKg: 24819,
+          outputWeightKg: 19855,
           processHours: 24,
           polymerComposition: 'ABS 94%, other 6%',
           wasteComposition: 'Non-ABS plastics, dust',
@@ -267,9 +271,9 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
       {
         eventType: 'InboundShipmentRecorded',
         eventData: {
-          grossWeightKg: 7200,
-          netWeightKg: 7000,
-          estimatedAbsKg: 6600,
+          grossWeightKg: 30000,
+          netWeightKg: 29500,
+          estimatedAbsKg: 28500,
           carrier: 'DSV',
           trackingRef: 'DSV-SE-2025-34567',
           shipDate: dateDaysAgo(88),
@@ -281,8 +285,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'GranulationCompleted',
         eventData: {
           ticketNumber: 'MBA-GRN-2025-0123',
-          startingWeightKg: 7000,
-          outputWeightKg: 6800,
+          startingWeightKg: 29500,
+          outputWeightKg: 28025,
           processHours: 14,
           contaminationNotes: 'Clean batch from store returns',
         },
@@ -292,8 +296,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'MetalRemovalCompleted',
         eventData: {
           ticketNumber: 'MBA-MTL-2025-0123',
-          startingWeightKg: 6800,
-          outputWeightKg: 6780,
+          startingWeightKg: 28025,
+          outputWeightKg: 26624,
           processHours: 4,
           notes: 'Very low metal content',
         },
@@ -303,8 +307,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'PolymerPurificationCompleted',
         eventData: {
           ticketNumber: 'MBA-PUR-2025-0123',
-          startingWeightKg: 6780,
-          outputWeightKg: 6500,
+          startingWeightKg: 26624,
+          outputWeightKg: 21299,
           processHours: 28,
           polymerComposition: 'ABS 96%, other 4%',
           wasteComposition: 'Non-ABS plastics',
@@ -316,8 +320,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventData: {
           ticketNumber: 'MBA-EXT-2025-0123',
           batchNumber: 'MBA-BATCH-2025-0089',
-          startingWeightKg: 6500,
-          outputWeightKg: 6450,
+          startingWeightKg: 21299,
+          outputWeightKg: 20234,
           processHours: 8,
           notes: 'Good pellet quality',
         },
@@ -344,9 +348,9 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
       {
         eventType: 'InboundShipmentRecorded',
         eventData: {
-          grossWeightKg: 3200,
-          netWeightKg: 3100,
-          estimatedAbsKg: 2900,
+          grossWeightKg: 24000,
+          netWeightKg: 23500,
+          estimatedAbsKg: 22500,
           carrier: 'DHL Express',
           trackingRef: 'DHL-UK-2025-56789',
           shipDate: dateDaysAgo(118),
@@ -358,8 +362,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'GranulationCompleted',
         eventData: {
           ticketNumber: 'MBA-GRN-2025-0098',
-          startingWeightKg: 3100,
-          outputWeightKg: 3000,
+          startingWeightKg: 23500,
+          outputWeightKg: 22325,
           processHours: 6,
           contaminationNotes: 'High quality input',
         },
@@ -369,8 +373,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'MetalRemovalCompleted',
         eventData: {
           ticketNumber: 'MBA-MTL-2025-0098',
-          startingWeightKg: 3000,
-          outputWeightKg: 2990,
+          startingWeightKg: 22325,
+          outputWeightKg: 21209,
           processHours: 2,
           notes: 'Minimal metal',
         },
@@ -380,8 +384,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'PolymerPurificationCompleted',
         eventData: {
           ticketNumber: 'MBA-PUR-2025-0098',
-          startingWeightKg: 2990,
-          outputWeightKg: 2880,
+          startingWeightKg: 21209,
+          outputWeightKg: 16967,
           processHours: 20,
           polymerComposition: 'ABS 97%, other 3%',
           wasteComposition: 'Minor contaminants',
@@ -393,8 +397,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventData: {
           ticketNumber: 'MBA-EXT-2025-0098',
           batchNumber: 'MBA-BATCH-2025-0067',
-          startingWeightKg: 2880,
-          outputWeightKg: 2850,
+          startingWeightKg: 16967,
+          outputWeightKg: 16119,
           processHours: 5,
           notes: 'Excellent pellet quality',
         },
@@ -430,9 +434,9 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
       {
         eventType: 'InboundShipmentRecorded',
         eventData: {
-          grossWeightKg: 5500,
-          netWeightKg: 5350,
-          estimatedAbsKg: 5000,
+          grossWeightKg: 32000,
+          netWeightKg: 31500,
+          estimatedAbsKg: 30500,
           carrier: 'SEUR',
           trackingRef: 'SEUR-ES-2025-23456',
           shipDate: dateDaysAgo(148),
@@ -444,8 +448,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'GranulationCompleted',
         eventData: {
           ticketNumber: 'MBA-GRN-2025-0078',
-          startingWeightKg: 5350,
-          outputWeightKg: 5180,
+          startingWeightKg: 31500,
+          outputWeightKg: 29925,
           processHours: 10,
           contaminationNotes: 'Standard processing',
         },
@@ -455,8 +459,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'MetalRemovalCompleted',
         eventData: {
           ticketNumber: 'MBA-MTL-2025-0078',
-          startingWeightKg: 5180,
-          outputWeightKg: 5150,
+          startingWeightKg: 29925,
+          outputWeightKg: 28429,
           processHours: 3,
           notes: 'Normal metal content',
         },
@@ -466,8 +470,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'PolymerPurificationCompleted',
         eventData: {
           ticketNumber: 'MBA-PUR-2025-0078',
-          startingWeightKg: 5150,
-          outputWeightKg: 4950,
+          startingWeightKg: 28429,
+          outputWeightKg: 22743,
           processHours: 26,
           polymerComposition: 'ABS 95%, other 5%',
           wasteComposition: 'Mixed polymer waste',
@@ -479,8 +483,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventData: {
           ticketNumber: 'MBA-EXT-2025-0078',
           batchNumber: 'MBA-BATCH-2025-0056',
-          startingWeightKg: 4950,
-          outputWeightKg: 4900,
+          startingWeightKg: 22743,
+          outputWeightKg: 21606,
           processHours: 7,
           notes: 'Good quality output',
         },
@@ -502,7 +506,7 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
           carrier: 'MBA Internal Logistics',
           shipDate: dateDaysAgo(115),
           receivedDate: dateDaysAgo(113),
-          receivedWeightKg: 4890,
+          receivedWeightKg: 21500,
         },
         daysAgo: 113,
       },
@@ -527,9 +531,9 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
       {
         eventType: 'InboundShipmentRecorded',
         eventData: {
-          grossWeightKg: 4800,
-          netWeightKg: 4650,
-          estimatedAbsKg: 4400,
+          grossWeightKg: 35000,
+          netWeightKg: 34500,
+          estimatedAbsKg: 33500,
           carrier: 'Bartolini',
           trackingRef: 'BRT-IT-2025-78901',
           shipDate: dateDaysAgo(178),
@@ -541,8 +545,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'GranulationCompleted',
         eventData: {
           ticketNumber: 'MBA-GRN-2025-0056',
-          startingWeightKg: 4650,
-          outputWeightKg: 4500,
+          startingWeightKg: 34500,
+          outputWeightKg: 32775,
           processHours: 9,
           contaminationNotes: 'Minor dust removed',
         },
@@ -552,8 +556,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'MetalRemovalCompleted',
         eventData: {
           ticketNumber: 'MBA-MTL-2025-0056',
-          startingWeightKg: 4500,
-          outputWeightKg: 4480,
+          startingWeightKg: 32775,
+          outputWeightKg: 31136,
           processHours: 3,
           notes: 'Low metal content',
         },
@@ -563,8 +567,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'PolymerPurificationCompleted',
         eventData: {
           ticketNumber: 'MBA-PUR-2025-0056',
-          startingWeightKg: 4480,
-          outputWeightKg: 4300,
+          startingWeightKg: 31136,
+          outputWeightKg: 24909,
           processHours: 22,
           polymerComposition: 'ABS 95.5%, other 4.5%',
           wasteComposition: 'Non-ABS materials',
@@ -576,8 +580,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventData: {
           ticketNumber: 'MBA-EXT-2025-0056',
           batchNumber: 'MBA-BATCH-2025-0045',
-          startingWeightKg: 4300,
-          outputWeightKg: 4260,
+          startingWeightKg: 24909,
+          outputWeightKg: 23664,
           processHours: 6,
           notes: 'Standard quality',
         },
@@ -599,7 +603,7 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
           carrier: 'MBA Internal Logistics',
           shipDate: dateDaysAgo(145),
           receivedDate: dateDaysAgo(143),
-          receivedWeightKg: 4250,
+          receivedWeightKg: 23550,
         },
         daysAgo: 143,
       },
@@ -607,7 +611,7 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'ManufacturingStarted',
         eventData: {
           poNumber: 'RGE-PO-2025-1234',
-          poQuantity: 50000,
+          poQuantity: 7800,
           startDate: dateDaysAgo(140),
         },
         daysAgo: 140,
@@ -633,9 +637,9 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
       {
         eventType: 'InboundShipmentRecorded',
         eventData: {
-          grossWeightKg: 3600,
-          netWeightKg: 3500,
-          estimatedAbsKg: 3300,
+          grossWeightKg: 26000,
+          netWeightKg: 25500,
+          estimatedAbsKg: 24500,
           carrier: 'Bpost',
           trackingRef: 'BPOST-BE-2025-45678',
           shipDate: dateDaysAgo(208),
@@ -647,8 +651,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'GranulationCompleted',
         eventData: {
           ticketNumber: 'MBA-GRN-2025-0034',
-          startingWeightKg: 3500,
-          outputWeightKg: 3380,
+          startingWeightKg: 25500,
+          outputWeightKg: 24225,
           processHours: 7,
           contaminationNotes: 'Clean batch',
         },
@@ -658,8 +662,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'MetalRemovalCompleted',
         eventData: {
           ticketNumber: 'MBA-MTL-2025-0034',
-          startingWeightKg: 3380,
-          outputWeightKg: 3370,
+          startingWeightKg: 24225,
+          outputWeightKg: 23014,
           processHours: 2,
           notes: 'Minimal metal',
         },
@@ -669,8 +673,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'PolymerPurificationCompleted',
         eventData: {
           ticketNumber: 'MBA-PUR-2025-0034',
-          startingWeightKg: 3370,
-          outputWeightKg: 3250,
+          startingWeightKg: 23014,
+          outputWeightKg: 18411,
           processHours: 18,
           polymerComposition: 'ABS 96.5%, other 3.5%',
           wasteComposition: 'Dust and non-ABS',
@@ -682,8 +686,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventData: {
           ticketNumber: 'MBA-EXT-2025-0034',
           batchNumber: 'MBA-BATCH-2025-0034',
-          startingWeightKg: 3250,
-          outputWeightKg: 3220,
+          startingWeightKg: 18411,
+          outputWeightKg: 17490,
           processHours: 5,
           notes: 'High quality pellets',
         },
@@ -705,7 +709,7 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
           carrier: 'MBA Internal Logistics',
           shipDate: dateDaysAgo(175),
           receivedDate: dateDaysAgo(173),
-          receivedWeightKg: 3210,
+          receivedWeightKg: 17400,
         },
         daysAgo: 173,
       },
@@ -713,7 +717,7 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'ManufacturingStarted',
         eventData: {
           poNumber: 'RGE-PO-2025-1122',
-          poQuantity: 38000,
+          poQuantity: 5800,
           startDate: dateDaysAgo(170),
         },
         daysAgo: 170,
@@ -722,7 +726,7 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'ManufacturingCompleted',
         eventData: {
           endDate: dateDaysAgo(155),
-          actualQuantity: 37500,
+          actualQuantity: 5750,
           notes: 'Minor quality rejects',
         },
         daysAgo: 155,
@@ -748,9 +752,9 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
       {
         eventType: 'InboundShipmentRecorded',
         eventData: {
-          grossWeightKg: 2800,
-          netWeightKg: 2700,
-          estimatedAbsKg: 2500,
+          grossWeightKg: 22000,
+          netWeightKg: 21500,
+          estimatedAbsKg: 20500,
           carrier: 'Swiss Post',
           trackingRef: 'SWP-CH-2025-12345',
           shipDate: dateDaysAgo(238),
@@ -762,8 +766,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'GranulationCompleted',
         eventData: {
           ticketNumber: 'MBA-GRN-2025-0023',
-          startingWeightKg: 2700,
-          outputWeightKg: 2620,
+          startingWeightKg: 21500,
+          outputWeightKg: 20425,
           processHours: 5,
           contaminationNotes: 'Very clean batch',
         },
@@ -773,8 +777,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'MetalRemovalCompleted',
         eventData: {
           ticketNumber: 'MBA-MTL-2025-0023',
-          startingWeightKg: 2620,
-          outputWeightKg: 2610,
+          startingWeightKg: 20425,
+          outputWeightKg: 19404,
           processHours: 2,
           notes: 'Almost no metal',
         },
@@ -784,8 +788,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'PolymerPurificationCompleted',
         eventData: {
           ticketNumber: 'MBA-PUR-2025-0023',
-          startingWeightKg: 2610,
-          outputWeightKg: 2520,
+          startingWeightKg: 19404,
+          outputWeightKg: 15523,
           processHours: 16,
           polymerComposition: 'ABS 97.5%, other 2.5%',
           wasteComposition: 'Minor contaminants',
@@ -797,8 +801,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventData: {
           ticketNumber: 'MBA-EXT-2025-0023',
           batchNumber: 'MBA-BATCH-2025-0023',
-          startingWeightKg: 2520,
-          outputWeightKg: 2500,
+          startingWeightKg: 15523,
+          outputWeightKg: 14747,
           processHours: 4,
           notes: 'Premium quality pellets',
         },
@@ -820,7 +824,7 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
           carrier: 'MBA Internal Logistics',
           shipDate: dateDaysAgo(205),
           receivedDate: dateDaysAgo(203),
-          receivedWeightKg: 2495,
+          receivedWeightKg: 14700,
         },
         daysAgo: 203,
       },
@@ -828,7 +832,7 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'ManufacturingStarted',
         eventData: {
           poNumber: 'RGE-PO-2025-1011',
-          poQuantity: 30000,
+          poQuantity: 4900,
           startDate: dateDaysAgo(200),
         },
         daysAgo: 200,
@@ -837,7 +841,7 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'ManufacturingCompleted',
         eventData: {
           endDate: dateDaysAgo(185),
-          actualQuantity: 29800,
+          actualQuantity: 4875,
           notes: 'Excellent yield',
         },
         daysAgo: 185,
@@ -849,7 +853,7 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
           carrier: 'DHL Express',
           shipDate: dateDaysAgo(180),
           receivedDate: dateDaysAgo(178),
-          quantity: 29800,
+          quantity: 4875,
         },
         daysAgo: 178,
       },
@@ -874,9 +878,9 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
       {
         eventType: 'InboundShipmentRecorded',
         eventData: {
-          grossWeightKg: 6000,
-          netWeightKg: 5850,
-          estimatedAbsKg: 5500,
+          grossWeightKg: 40000,
+          netWeightKg: 39500,
+          estimatedAbsKg: 38500,
           carrier: 'PostNord',
           trackingRef: 'PN-NO-2025-67890',
           shipDate: dateDaysAgo(298),
@@ -888,8 +892,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'GranulationCompleted',
         eventData: {
           ticketNumber: 'MBA-GRN-2025-0012',
-          startingWeightKg: 5850,
-          outputWeightKg: 5680,
+          startingWeightKg: 39500,
+          outputWeightKg: 37525,
           processHours: 11,
           contaminationNotes: 'Some packaging material removed',
         },
@@ -899,8 +903,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'MetalRemovalCompleted',
         eventData: {
           ticketNumber: 'MBA-MTL-2025-0012',
-          startingWeightKg: 5680,
-          outputWeightKg: 5650,
+          startingWeightKg: 37525,
+          outputWeightKg: 35649,
           processHours: 3,
           notes: 'Standard metal content',
         },
@@ -910,8 +914,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'PolymerPurificationCompleted',
         eventData: {
           ticketNumber: 'MBA-PUR-2025-0012',
-          startingWeightKg: 5650,
-          outputWeightKg: 5450,
+          startingWeightKg: 35649,
+          outputWeightKg: 28519,
           processHours: 24,
           polymerComposition: 'ABS 95%, other 5%',
           wasteComposition: 'Mixed polymer waste',
@@ -923,8 +927,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventData: {
           ticketNumber: 'MBA-EXT-2025-0012',
           batchNumber: 'MBA-BATCH-2025-0012',
-          startingWeightKg: 5450,
-          outputWeightKg: 5400,
+          startingWeightKg: 28519,
+          outputWeightKg: 27093,
           processHours: 8,
           notes: 'Good quality output',
         },
@@ -946,7 +950,7 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
           carrier: 'MBA Internal Logistics',
           shipDate: dateDaysAgo(265),
           receivedDate: dateDaysAgo(263),
-          receivedWeightKg: 5390,
+          receivedWeightKg: 27000,
         },
         daysAgo: 263,
       },
@@ -954,7 +958,7 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'ManufacturingStarted',
         eventData: {
           poNumber: 'RGE-PO-2025-1001',
-          poQuantity: 65000,
+          poQuantity: 9000,
           startDate: dateDaysAgo(260),
         },
         daysAgo: 260,
@@ -963,7 +967,7 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'ManufacturingCompleted',
         eventData: {
           endDate: dateDaysAgo(240),
-          actualQuantity: 64200,
+          actualQuantity: 8950,
           notes: 'Minor yield loss within acceptable range',
         },
         daysAgo: 240,
@@ -975,7 +979,7 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
           carrier: 'DHL Express',
           shipDate: dateDaysAgo(235),
           receivedDate: dateDaysAgo(233),
-          quantity: 64200,
+          quantity: 8950,
         },
         daysAgo: 233,
       },
@@ -1007,9 +1011,9 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
       {
         eventType: 'InboundShipmentRecorded',
         eventData: {
-          grossWeightKg: 4500,
-          netWeightKg: 4350,
-          estimatedAbsKg: 4100,
+          grossWeightKg: 25000,
+          netWeightKg: 24500,
+          estimatedAbsKg: 23500,
           carrier: 'FedEx',
           trackingRef: 'FDX-UK-2025-11111',
           shipDate: dateDaysAgo(328),
@@ -1021,8 +1025,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'GranulationCompleted',
         eventData: {
           ticketNumber: 'MBA-GRN-2025-0001',
-          startingWeightKg: 4350,
-          outputWeightKg: 4200, // This will be corrected
+          startingWeightKg: 24500,
+          outputWeightKg: 23275,
           processHours: 8,
           contaminationNotes: 'First batch processing',
         },
@@ -1033,8 +1037,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'MetalRemovalCompleted',
         eventData: {
           ticketNumber: 'MBA-MTL-2025-0001',
-          startingWeightKg: 4200,
-          outputWeightKg: 4150, // INCORRECT - will be corrected to 4180
+          startingWeightKg: 23275,
+          outputWeightKg: 22111, // INCORRECT - will be corrected to 22150
           processHours: 3,
           notes: 'Standard processing',
         },
@@ -1044,8 +1048,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'PolymerPurificationCompleted',
         eventData: {
           ticketNumber: 'MBA-PUR-2025-0001',
-          startingWeightKg: 4150, // Based on incorrect weight
-          outputWeightKg: 4000,
+          startingWeightKg: 22111, // Based on incorrect weight
+          outputWeightKg: 17689,
           processHours: 20,
           polymerComposition: 'ABS 94%, other 6%',
           wasteComposition: 'Non-ABS plastics',
@@ -1057,8 +1061,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventData: {
           ticketNumber: 'MBA-EXT-2025-0001',
           batchNumber: 'MBA-BATCH-2025-0001',
-          startingWeightKg: 4000,
-          outputWeightKg: 3960,
+          startingWeightKg: 17689,
+          outputWeightKg: 16805,
           processHours: 6,
           notes: 'Good quality',
         },
@@ -1085,9 +1089,9 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
       {
         eventType: 'InboundShipmentRecorded',
         eventData: {
-          grossWeightKg: 12000,
-          netWeightKg: 11800,
-          estimatedAbsKg: 11500,
+          grossWeightKg: 25000,
+          netWeightKg: 24500,
+          estimatedAbsKg: 24000,
           carrier: 'LEGO Internal',
           trackingRef: 'LEGO-INT-2025-001',
           shipDate: dateDaysAgo(73),
@@ -1099,8 +1103,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'GranulationCompleted',
         eventData: {
           ticketNumber: 'MBA-GRN-PI-2025-0001',
-          startingWeightKg: 11800,
-          outputWeightKg: 11700,
+          startingWeightKg: 24500,
+          outputWeightKg: 23275,
           processHours: 20,
           contaminationNotes: 'Factory floor scrap - very clean',
         },
@@ -1110,8 +1114,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'MetalRemovalCompleted',
         eventData: {
           ticketNumber: 'MBA-MTL-PI-2025-0001',
-          startingWeightKg: 11700,
-          outputWeightKg: 11680,
+          startingWeightKg: 23275,
+          outputWeightKg: 22111,
           processHours: 5,
           notes: 'Minimal metal - factory scrap',
         },
@@ -1121,8 +1125,8 @@ const SEED_CAMPAIGNS: SeedCampaign[] = [
         eventType: 'PolymerPurificationCompleted',
         eventData: {
           ticketNumber: 'MBA-PUR-PI-2025-0001',
-          startingWeightKg: 11680,
-          outputWeightKg: 11500,
+          startingWeightKg: 22111,
+          outputWeightKg: 17689,
           processHours: 30,
           polymerComposition: 'ABS 99%, other 1%',
           wasteComposition: 'Dust only',
@@ -1173,8 +1177,8 @@ async function seedCampaign(campaign: SeedCampaign): Promise<void> {
         reason: 'Scale calibration error discovered - re-weighed output',
         changes: {
           outputWeightKg: {
-            was: 4150,
-            now: 4180,
+            was: 22111,
+            now: 22150,
           },
         },
       };
@@ -1189,7 +1193,7 @@ async function seedCampaign(campaign: SeedCampaign): Promise<void> {
 
       await updateProjection('EventCorrected', campaignId, correctionData, correctionTimestamp);
       
-      console.log(`  - EventCorrected (weight correction: 4150 → 4180 kg)`);
+      console.log(`  - EventCorrected (weight correction: 22111 → 22150 kg)`);
     }
   }
 }
