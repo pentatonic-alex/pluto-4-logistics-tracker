@@ -45,6 +45,7 @@ export function Navigation() {
   const navLinks = [
     { href: '/', label: 'Dashboard' },
     { href: '/archive', label: 'Archive' },
+    { href: '/import', label: 'Import' },
     { href: '/campaigns/new', label: 'New Campaign' },
   ];
 
