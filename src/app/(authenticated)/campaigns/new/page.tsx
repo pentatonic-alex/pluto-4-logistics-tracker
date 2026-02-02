@@ -1,14 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { FormError, FormBanner } from '@/components/FormError';
+import { useToast } from '@/components/Toast';
+import { validateRequired, validateCampaignCode, getFieldError, type ValidationError } from '@/lib/validation';
 import type { MaterialType } from '@/types';
 
 export default function NewCampaignPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<ValidationError[]>([]);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const [formData, setFormData] = useState({
     legoCampaignCode: '',
@@ -16,8 +22,74 @@ export default function NewCampaignPage() {
     description: '',
   });
 
+  // Validate a single field
+  const validateField = useCallback((field: string, value: string): ValidationError | null => {
+    switch (field) {
+      case 'legoCampaignCode': {
+        const required = validateRequired(value, 'Campaign code');
+        if (required) return required;
+        return validateCampaignCode(value);
+      }
+      default:
+        return null;
+    }
+  }, []);
+
+  // Handle field blur - run validation
+  const handleBlur = useCallback((field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    
+    const error = validateField(field, formData[field as keyof typeof formData] as string);
+    
+    setFieldErrors((prev) => {
+      // Remove existing error for this field
+      const filtered = prev.filter((e) => e.field !== field);
+      // Add new error if exists
+      return error ? [...filtered, error] : filtered;
+    });
+  }, [formData, validateField]);
+
+  // Handle field change
+  const handleChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    
+    // Clear field error when user types (if touched)
+    if (touched[field]) {
+      const error = validateField(field, value);
+      setFieldErrors((prev) => {
+        const filtered = prev.filter((e) => e.field !== field);
+        return error ? [...filtered, error] : filtered;
+      });
+    }
+  };
+
+  // Validate all fields before submit
+  const validateAll = (): boolean => {
+    const errors: ValidationError[] = [];
+    
+    // Campaign code
+    const codeError = validateField('legoCampaignCode', formData.legoCampaignCode);
+    if (codeError) errors.push(codeError);
+
+    // Material type is always valid (select with default)
+    
+    setFieldErrors(errors);
+    setTouched({ legoCampaignCode: true, materialType: true });
+    
+    return errors.length === 0;
+  };
+
+  // Check if form can be submitted
+  const canSubmit = formData.legoCampaignCode.trim().length > 0 && fieldErrors.length === 0;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    
+    // Validate all fields
+    if (!validateAll()) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -37,21 +109,46 @@ export default function NewCampaignPage() {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create campaign');
+        // Handle specific field errors from server
+        if (data.field) {
+          setFieldErrors([{ field: data.field, message: data.error }]);
+          setTouched((prev) => ({ ...prev, [data.field]: true }));
+        } else if (response.status === 401) {
+          // Session expired
+          showToast('error', 'Your session has expired. Please log in again.', 'Session Expired');
+          router.push('/login');
+          return;
+        } else {
+          setError(data.error || 'Failed to create campaign');
+        }
+        setLoading(false);
+        return;
       }
 
-      const data = await response.json();
+      showToast('success', 'Campaign created successfully');
       router.push(`/campaigns/${data.campaignId}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      // Network error
+      showToast('error', 'Unable to connect to server. Please check your connection.', 'Network Error');
       setLoading(false);
     }
   }
 
+  // Get CSS class for input based on error state
+  const getInputClass = (field: string) => {
+    const hasError = touched[field] && getFieldError(fieldErrors, field);
+    const baseClass = 'w-full px-4 py-2.5 bg-white dark:bg-zinc-800 border rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:border-transparent';
+    const errorClass = hasError
+      ? 'border-red-300 dark:border-red-700 focus:ring-red-500'
+      : 'border-zinc-300 dark:border-zinc-700 focus:ring-blue-500';
+    return `${baseClass} ${errorClass}`;
+  };
+
   return (
-    <div className="max-w-xl">
+    <div className="max-w-xl mx-auto sm:mx-0">
       {/* Header with back link */}
       <div className="mb-8">
         <Link
@@ -74,23 +171,13 @@ export default function NewCampaignPage() {
       {/* Form */}
       <form onSubmit={handleSubmit}>
         <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-6">
-          {/* Error message */}
+          {/* Form-level error banner */}
           {error && (
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-red-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <div>
-                  <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                    Failed to create campaign
-                  </p>
-                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                    {error}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <FormBanner
+              title="Failed to create campaign"
+              message={error}
+              onDismiss={() => setError(null)}
+            />
           )}
 
           {/* LEGO Campaign Code */}
@@ -104,15 +191,22 @@ export default function NewCampaignPage() {
             <input
               type="text"
               id="legoCampaignCode"
-              required
               value={formData.legoCampaignCode}
-              onChange={(e) => setFormData({ ...formData, legoCampaignCode: e.target.value })}
+              onChange={(e) => handleChange('legoCampaignCode', e.target.value)}
+              onBlur={() => handleBlur('legoCampaignCode')}
               placeholder="e.g., REPLAY-2026-001"
-              className="w-full px-4 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={getInputClass('legoCampaignCode')}
+              aria-invalid={touched.legoCampaignCode && !!getFieldError(fieldErrors, 'legoCampaignCode')}
+              aria-describedby="legoCampaignCode-error legoCampaignCode-hint"
             />
-            <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-              The unique identifier from LEGO for this campaign
-            </p>
+            {touched.legoCampaignCode && (
+              <FormError message={getFieldError(fieldErrors, 'legoCampaignCode')} />
+            )}
+            {!getFieldError(fieldErrors, 'legoCampaignCode') && (
+              <p id="legoCampaignCode-hint" className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                The unique identifier from LEGO for this campaign
+              </p>
+            )}
           </div>
 
           {/* Material Type */}
@@ -125,10 +219,9 @@ export default function NewCampaignPage() {
             </label>
             <select
               id="materialType"
-              required
               value={formData.materialType}
-              onChange={(e) => setFormData({ ...formData, materialType: e.target.value as MaterialType })}
-              className="w-full px-4 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer"
+              onChange={(e) => handleChange('materialType', e.target.value)}
+              className={getInputClass('materialType') + ' appearance-none cursor-pointer'}
               style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '20px' }}
             >
               <option value="PCR">PCR - Post-Consumer Recycled</option>
@@ -146,11 +239,12 @@ export default function NewCampaignPage() {
               className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2"
             >
               Description
+              <span className="text-zinc-400 dark:text-zinc-500 font-normal ml-2">(optional)</span>
             </label>
             <textarea
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => handleChange('description', e.target.value)}
               placeholder="Optional notes about this campaign..."
               rows={3}
               className="w-full px-4 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
@@ -168,7 +262,7 @@ export default function NewCampaignPage() {
           </Link>
           <button
             type="submit"
-            disabled={loading || !formData.legoCampaignCode.trim()}
+            disabled={loading || !canSubmit}
             className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
           >
             {loading ? (

@@ -14,11 +14,11 @@ interface PageProps {
 
 function CampaignHeader({ campaign }: { campaign: Campaign }) {
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">
               {campaign.legoCampaignCode}
             </h1>
             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
@@ -26,27 +26,29 @@ function CampaignHeader({ campaign }: { campaign: Campaign }) {
             </span>
           </div>
           {campaign.description && (
-            <p className="text-zinc-600 dark:text-zinc-400">{campaign.description}</p>
+            <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400">{campaign.description}</p>
           )}
         </div>
-        <StatusBadge status={campaign.status} />
+        <div className="flex-shrink-0">
+          <StatusBadge status={campaign.status} />
+        </div>
       </div>
 
-      <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <dl className="mt-4 sm:mt-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4">
         <div>
-          <dt className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Current Step</dt>
+          <dt className="text-xs sm:text-sm font-medium text-zinc-500 dark:text-zinc-400">Current Step</dt>
           <dd className="mt-1 text-sm text-zinc-900 dark:text-zinc-100">
             {campaign.currentStep || '—'}
           </dd>
         </div>
         <div>
-          <dt className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Current Weight</dt>
+          <dt className="text-xs sm:text-sm font-medium text-zinc-500 dark:text-zinc-400">Current Weight</dt>
           <dd className="mt-1 text-sm text-zinc-900 dark:text-zinc-100">
             {campaign.currentWeightKg ? `${campaign.currentWeightKg.toLocaleString()} kg` : '—'}
           </dd>
         </div>
         <div>
-          <dt className="text-sm font-medium text-zinc-500 dark:text-zinc-400">ECHA Status</dt>
+          <dt className="text-xs sm:text-sm font-medium text-zinc-500 dark:text-zinc-400">ECHA Status</dt>
           <dd className="mt-1 text-sm text-zinc-900 dark:text-zinc-100">
             {campaign.echaApproved ? (
               <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
@@ -61,7 +63,7 @@ function CampaignHeader({ campaign }: { campaign: Campaign }) {
           </dd>
         </div>
         <div>
-          <dt className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Next Step</dt>
+          <dt className="text-xs sm:text-sm font-medium text-zinc-500 dark:text-zinc-400">Next Step</dt>
           <dd className="mt-1 text-sm text-zinc-900 dark:text-zinc-100">
             {campaign.nextExpectedStep || '—'}
           </dd>
@@ -109,14 +111,14 @@ export default async function CampaignDetailPage({ params }: PageProps) {
       <CampaignHeader campaign={campaign} />
 
       {/* Actions */}
-      <div className="flex items-center justify-between mt-8 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-6 sm:mt-8 mb-4">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
           Event History
         </h2>
         {campaign.status !== 'completed' && (
           <Link
             href={`/campaigns/${id}/log`}
-            className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors inline-flex items-center gap-2"
+            className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors inline-flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

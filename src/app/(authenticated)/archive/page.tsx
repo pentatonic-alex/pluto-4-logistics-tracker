@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { SkeletonStatsGrid, SkeletonArchivedCard } from '@/components/ui/Skeleton';
 import type { Campaign } from '@/types';
 
 export default function ArchivePage() {
@@ -64,8 +65,8 @@ export default function ArchivePage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Header - responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Link
@@ -88,7 +89,7 @@ export default function ArchivePage() {
         {/* Export placeholder */}
         <button
           disabled
-          className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 rounded-lg text-sm font-medium cursor-not-allowed inline-flex items-center gap-2"
+          className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 rounded-lg text-sm font-medium cursor-not-allowed inline-flex items-center justify-center gap-2 w-full sm:w-auto"
           title="Export coming soon"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -98,9 +99,13 @@ export default function ArchivePage() {
         </button>
       </div>
 
-      {/* Summary Stats */}
-      {!loading && !error && campaigns.length > 0 && (
-        <div className="grid grid-cols-3 gap-4 mb-6">
+      {/* Summary Stats - responsive grid */}
+      {loading ? (
+        <div className="mb-6">
+          <SkeletonStatsGrid />
+        </div>
+      ) : !error && campaigns.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
             <div className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
               {stats.totalCampaigns}
@@ -126,7 +131,7 @@ export default function ArchivePage() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Search */}
       <div className="mb-6">
@@ -156,16 +161,10 @@ export default function ArchivePage() {
 
       {/* Content */}
       {loading ? (
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-          <div className="px-6 py-12 text-center">
-            <div className="inline-flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-              Loading archived campaigns...
-            </div>
-          </div>
+        <div className="space-y-3">
+          <SkeletonArchivedCard />
+          <SkeletonArchivedCard />
+          <SkeletonArchivedCard />
         </div>
       ) : error ? (
         <div className="bg-white dark:bg-zinc-900 rounded-xl border border-red-200 dark:border-red-800 overflow-hidden">
@@ -241,7 +240,7 @@ function ArchivedCampaignCard({ campaign }: { campaign: Campaign }) {
       href={`/campaigns/${campaign.id}`}
       className="block bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-5 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-sm transition-all"
     >
-      <div className="flex items-start justify-between gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4">
         <div className="min-w-0 flex-1">
           {/* Campaign code and material type */}
           <div className="flex items-center gap-2 mb-1">
@@ -272,8 +271,8 @@ function ArchivedCampaignCard({ campaign }: { campaign: Campaign }) {
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="flex items-center gap-6 text-xs text-zinc-500 dark:text-zinc-400 mb-4">
+      {/* Stats row - responsive wrapping */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-zinc-500 dark:text-zinc-400 mb-4">
         <span className="flex items-center gap-1">
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -306,19 +305,19 @@ function ArchivedCampaignCard({ campaign }: { campaign: Campaign }) {
         )}
       </div>
 
-      {/* Collapsed timeline preview */}
-      <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800">
+      {/* Collapsed timeline preview - hidden on very small screens */}
+      <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 hidden sm:block">
         <div className="flex items-center justify-between">
           {timelineSteps.map((step, i) => (
             <div key={step.label} className="flex items-center">
               <div className="flex flex-col items-center">
                 <div className="w-2 h-2 rounded-full bg-green-500" />
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
+                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1 whitespace-nowrap">
                   {step.label}
                 </span>
               </div>
               {i < timelineSteps.length - 1 && (
-                <div className="w-8 sm:w-12 md:w-16 h-px bg-green-300 dark:bg-green-700 mx-1" />
+                <div className="w-6 sm:w-10 md:w-14 lg:w-16 h-px bg-green-300 dark:bg-green-700 mx-1" />
               )}
             </div>
           ))}
