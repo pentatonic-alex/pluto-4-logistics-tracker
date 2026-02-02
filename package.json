@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "setup": "tsx scripts/setup.ts",
+    "seed": "tsx --env-file=.env.local scripts/seed.ts",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
