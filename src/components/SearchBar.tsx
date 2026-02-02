@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CampaignStatus } from '@/types';
-import type { SearchResult } from '@/lib/projections';
+import type { SearchResult, Suggestion } from '@/lib/projections';
 
-// Re-export SearchResult type for consumers
-export type { SearchResult };
+// Re-export types for consumers
+export type { SearchResult, Suggestion };
 
 // Match field labels for display
 const MATCH_LABELS: Record<SearchResult['matchedField'], string> = {
@@ -44,15 +44,32 @@ export function SearchBar({ className = '' }: SearchBarProps) {
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
-  // Debounced search
+  // Fetch suggestions on mount (recent campaigns)
   useEffect(() => {
-    if (query.trim().length < 2) {
+    async function fetchSuggestions() {
+      try {
+        const response = await fetch('/api/search/suggestions');
+        if (response.ok) {
+          const data = await response.json();
+          setSuggestions(data.suggestions);
+        }
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+      }
+    }
+    fetchSuggestions();
+  }, []);
+
+  // Debounced search (reduced to 200ms for faster response)
+  useEffect(() => {
+    if (query.trim().length < 1) {
       setResults([]);
-      setIsOpen(false);
+      // Don't close dropdown - show suggestions instead
       return;
     }
 
@@ -71,7 +88,7 @@ export function SearchBar({ className = '' }: SearchBarProps) {
       } finally {
         setIsLoading(false);
       }
-    }, 300);
+    }, 200); // Reduced debounce for faster suggestions
 
     return () => clearTimeout(timeoutId);
   }, [query]);
@@ -84,9 +101,13 @@ export function SearchBar({ className = '' }: SearchBarProps) {
     router.push(`/campaigns/${campaignId}`);
   }, [router]);
 
+  // Determine which items to show for keyboard navigation
+  const displayItems = query.trim().length > 0 ? results : suggestions;
+  const itemCount = displayItems.length;
+
   // Keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (!isOpen || results.length === 0) {
+    if (!isOpen || itemCount === 0) {
       if (e.key === 'Escape') {
         setIsOpen(false);
         inputRef.current?.blur();
@@ -98,7 +119,7 @@ export function SearchBar({ className = '' }: SearchBarProps) {
       case 'ArrowDown':
         e.preventDefault();
         setSelectedIndex(prev => 
-          prev < results.length - 1 ? prev + 1 : prev
+          prev < itemCount - 1 ? prev + 1 : prev
         );
         break;
       case 'ArrowUp':
@@ -107,8 +128,9 @@ export function SearchBar({ className = '' }: SearchBarProps) {
         break;
       case 'Enter':
         e.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < results.length) {
-          navigateToCampaign(results[selectedIndex].campaignId);
+        if (selectedIndex >= 0 && selectedIndex < itemCount) {
+          const item = displayItems[selectedIndex];
+          navigateToCampaign('campaignId' in item ? item.campaignId : item.campaignId);
         }
         break;
       case 'Escape':
@@ -121,7 +143,7 @@ export function SearchBar({ className = '' }: SearchBarProps) {
         setIsOpen(false);
         break;
     }
-  }, [isOpen, results, selectedIndex, navigateToCampaign]);
+  }, [isOpen, itemCount, selectedIndex, displayItems, navigateToCampaign]);
 
   // Global keyboard shortcut (Cmd/Ctrl+K)
   useEffect(() => {
@@ -153,6 +175,12 @@ export function SearchBar({ className = '' }: SearchBarProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Handle focus - show suggestions dropdown
+  const handleFocus = useCallback(() => {
+    setIsOpen(true);
+    setSelectedIndex(-1);
+  }, []);
+
   // Group results by match type for better organization
   const groupedResults = results.reduce((acc, result) => {
     const group = acc.get(result.matchedField) || [];
@@ -163,6 +191,10 @@ export function SearchBar({ className = '' }: SearchBarProps) {
 
   // Flatten for keyboard navigation (maintain order)
   const flatResults = results;
+
+  // Determine what to show in dropdown
+  const showSuggestions = query.trim().length === 0 && suggestions.length > 0;
+  const showResults = query.trim().length > 0;
 
   return (
     <div className={`relative ${className}`}>
@@ -188,7 +220,7 @@ export function SearchBar({ className = '' }: SearchBarProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          onFocus={() => query.length >= 2 && results.length > 0 && setIsOpen(true)}
+          onFocus={handleFocus}
           className="w-full pl-10 pr-12 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:border-transparent"
           aria-label="Search campaigns"
           aria-expanded={isOpen}
@@ -211,7 +243,7 @@ export function SearchBar({ className = '' }: SearchBarProps) {
         )}
       </div>
 
-      {/* Results Dropdown */}
+      {/* Results/Suggestions Dropdown */}
       {isOpen && (
         <div
           ref={dropdownRef}
@@ -219,11 +251,57 @@ export function SearchBar({ className = '' }: SearchBarProps) {
           role="listbox"
           className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg overflow-hidden z-50 max-h-80 overflow-y-auto"
         >
-          {results.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-              No campaigns found
+          {/* Show suggestions when query is empty */}
+          {showSuggestions && (
+            <div className="py-2">
+              <div className="px-3 py-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 flex items-center gap-1.5">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Recent Campaigns
+              </div>
+              {suggestions.map((suggestion, index) => {
+                const isSelected = index === selectedIndex;
+                return (
+                  <button
+                    key={suggestion.campaignId}
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => navigateToCampaign(suggestion.campaignId)}
+                    onMouseEnter={() => setSelectedIndex(index)}
+                    className={`w-full px-3 py-2 flex items-center gap-3 text-left transition-colors ${
+                      isSelected 
+                        ? 'bg-zinc-100 dark:bg-zinc-800' 
+                        : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate">
+                        {suggestion.legoCampaignCode}
+                      </div>
+                      {suggestion.description && (
+                        <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                          {suggestion.description}
+                        </div>
+                      )}
+                    </div>
+                    <span className={`flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full ${STATUS_COLORS[suggestion.status]}`}>
+                      {suggestion.status.replace(/_/g, ' ')}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-          ) : (
+          )}
+
+          {/* Show search results when query is provided */}
+          {showResults && results.length === 0 && !isLoading && (
+            <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+              No campaigns found for &ldquo;{query}&rdquo;
+            </div>
+          )}
+
+          {showResults && results.length > 0 && (
             <div className="py-2">
               {Array.from(groupedResults.entries()).map(([matchType, groupResults]) => (
                 <div key={matchType}>
@@ -269,6 +347,17 @@ export function SearchBar({ className = '' }: SearchBarProps) {
                   })}
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Loading state */}
+          {showResults && isLoading && results.length === 0 && (
+            <div className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+              <svg className="animate-spin h-5 w-5 mx-auto mb-2 text-zinc-400" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              Searching...
             </div>
           )}
         </div>

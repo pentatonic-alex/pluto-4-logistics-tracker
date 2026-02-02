@@ -28,10 +28,10 @@ describe('searchCampaigns', () => {
       expect(mockSql).not.toHaveBeenCalled();
     });
 
-    it('returns empty array for single character query', async () => {
-      const results = await searchCampaigns('a');
-      expect(results).toEqual([]);
-      expect(mockSql).not.toHaveBeenCalled();
+    it('executes search for single character query', async () => {
+      mockSql.mockResolvedValueOnce([]);
+      await searchCampaigns('a');
+      expect(mockSql).toHaveBeenCalled();
     });
 
     it('executes search for 2+ character query', async () => {

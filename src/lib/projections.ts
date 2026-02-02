@@ -460,12 +460,12 @@ export async function getCampaigns(statusFilter?: CampaignStatus | 'active'): Pr
  * - PO numbers (from event JSONB)
  * 
  * Returns deduplicated results with match context.
- * Minimum query length: 2 characters
+ * Minimum query length: 1 character
  * Maximum results: 20
  */
 export async function searchCampaigns(query: string): Promise<SearchResult[]> {
   // Validate query length
-  if (!query || query.trim().length < 2) {
+  if (!query || query.trim().length < 1) {
     return [];
   }
 
@@ -534,6 +534,40 @@ export async function searchCampaigns(query: string): Promise<SearchResult[]> {
     description: row.description as string | null,
     matchedField: row.match_type as SearchResult['matchedField'],
     matchedValue: row.match_value as string,
+  }));
+}
+
+/**
+ * Suggestion type for auto-complete
+ */
+export interface Suggestion {
+  campaignId: string;
+  legoCampaignCode: string;
+  status: CampaignStatus;
+  description: string | null;
+  updatedAt: string;
+}
+
+/**
+ * Get recent campaigns for auto-suggestions
+ * 
+ * Returns the most recently updated campaigns for showing
+ * suggestions when the search bar is focused but empty.
+ */
+export async function getRecentCampaigns(limit: number = 8): Promise<Suggestion[]> {
+  const rows = await sql`
+    SELECT id, lego_campaign_code, status, description, updated_at
+    FROM campaign_projections
+    ORDER BY updated_at DESC
+    LIMIT ${limit}
+  `;
+
+  return rows.map((row) => ({
+    campaignId: row.id as string,
+    legoCampaignCode: row.lego_campaign_code as string,
+    status: row.status as CampaignStatus,
+    description: row.description as string | null,
+    updatedAt: (row.updated_at as Date).toISOString(),
   }));
 }
 
