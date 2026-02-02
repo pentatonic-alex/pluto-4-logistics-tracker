@@ -27,9 +27,12 @@ Single-user web app for a project manager to record events and track campaign st
 ## Commands
 
 ```bash
-npm run dev      # Start development server
-npm run build    # Build for production
-npm run lint     # Run ESLint
+npm run dev           # Start development server
+npm run build         # Build for production
+npm run lint          # Run ESLint
+npm run test          # Run tests in watch mode
+npm run test:run      # Run tests once
+npm run test:coverage # Run tests with coverage report
 ```
 
 ### Database Setup
