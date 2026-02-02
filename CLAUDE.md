@@ -72,6 +72,28 @@ src/
 └── types/                   # TypeScript types
 ```
 
+## Task Tracking (Beads)
+
+This project uses Beads for task tracking. **Close tasks as you complete them.**
+
+```bash
+bd ready              # See unblocked tasks
+bd show <id>          # View task details
+bd close <id> --reason "Completed: brief description"
+bd status             # Overview
+```
+
+### Current Tasks
+
+| Phase | Tasks | Priority |
+|-------|-------|----------|
+| Phase 2: Event Infrastructure | pluto-740, pluto-voc, pluto-6d0 | P1 |
+| Phase 3: Campaign CRUD | pluto-jcj, pluto-zcx, pluto-k6f | P2 |
+| Phase 4: Event Logging UI | pluto-cfs, pluto-pql, pluto-45c | P2 |
+| Phase 5: Polish & UX | pluto-imy, pluto-t25, pluto-r20 | P3 |
+
+**After completing work, always close the relevant Beads task.**
+
 ## Documentation
 
 - `docs/brainstorms/` - Design decisions
