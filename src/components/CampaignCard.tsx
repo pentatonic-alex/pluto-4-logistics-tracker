@@ -1,9 +1,135 @@
 import Link from 'next/link';
 import { StatusBadge } from './StatusBadge';
-import type { Campaign } from '@/types';
+import type { Campaign, CampaignStatus } from '@/types';
 
 interface CampaignCardProps {
   campaign: Campaign;
+}
+
+// Timeline steps in order
+const TIMELINE_STEPS = [
+  { key: 'inbound', label: 'Inbound', statuses: ['inbound_shipment_recorded'] },
+  { key: 'granulation', label: 'Granulation', statuses: ['granulation_complete'] },
+  { key: 'metal', label: 'Metal', statuses: ['metal_removal_complete'] },
+  { key: 'purification', label: 'Purify', statuses: ['polymer_purification_complete'] },
+  { key: 'extrusion', label: 'Extrusion', statuses: ['extrusion_complete'] },
+  { key: 'echa', label: 'ECHA', statuses: ['echa_approved'] },
+  { key: 'transfer', label: 'To RGE', statuses: ['transferred_to_rge'] },
+  { key: 'manufacturing', label: 'Mfg', statuses: ['manufacturing_started', 'manufacturing_complete'] },
+  { key: 'return', label: 'Return', statuses: ['returned_to_lego'] },
+  { key: 'complete', label: 'Done', statuses: ['completed'] },
+] as const;
+
+// Status order for comparison
+const STATUS_ORDER: CampaignStatus[] = [
+  'created',
+  'inbound_shipment_recorded',
+  'granulation_complete',
+  'metal_removal_complete',
+  'polymer_purification_complete',
+  'extrusion_complete',
+  'echa_approved',
+  'transferred_to_rge',
+  'manufacturing_started',
+  'manufacturing_complete',
+  'returned_to_lego',
+  'completed',
+];
+
+function getStepState(step: typeof TIMELINE_STEPS[number], currentStatus: CampaignStatus): 'completed' | 'current' | 'pending' {
+  const currentIndex = STATUS_ORDER.indexOf(currentStatus);
+  
+  // Find the highest status index that this step covers
+  const stepStatuses = step.statuses as readonly CampaignStatus[];
+  const stepIndices = stepStatuses.map(s => STATUS_ORDER.indexOf(s));
+  const maxStepIndex = Math.max(...stepIndices);
+  const minStepIndex = Math.min(...stepIndices);
+  
+  if (currentIndex > maxStepIndex) {
+    return 'completed';
+  } else if (currentIndex >= minStepIndex && currentIndex <= maxStepIndex) {
+    return 'current';
+  }
+  return 'pending';
+}
+
+// Format date as short format: "15 Jan" or "15/1"
+function formatShortDate(dateStr: string | null): string {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
+// Step dates type - maps step key to date string
+type StepDates = Partial<Record<typeof TIMELINE_STEPS[number]['key'], string | null>>;
+
+interface CampaignTimelineProps {
+  status: CampaignStatus;
+  stepDates: StepDates;
+}
+
+function CampaignTimeline({ status, stepDates }: CampaignTimelineProps) {
+  return (
+    <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800 overflow-x-auto -mx-5 px-5">
+      <div className="flex items-start gap-0.5 min-w-[500px]">
+        {TIMELINE_STEPS.map((step, index) => {
+          const state = getStepState(step, status);
+          const date = stepDates[step.key];
+          const showDate = state !== 'pending';
+          
+          return (
+            <div key={step.key} className="flex items-start flex-1 min-w-0">
+              {/* Step indicator */}
+              <div className="flex flex-col items-center flex-1 min-w-0">
+                <div
+                  className={`
+                    w-2.5 h-2.5 rounded-full flex-shrink-0 transition-colors
+                    ${state === 'completed' ? 'bg-green-500 dark:bg-green-400' : ''}
+                    ${state === 'current' ? 'bg-blue-500 dark:bg-blue-400 ring-2 ring-blue-200 dark:ring-blue-900' : ''}
+                    ${state === 'pending' ? 'bg-zinc-200 dark:bg-zinc-700' : ''}
+                  `}
+                />
+                <span
+                  className={`
+                    text-[9px] mt-1 truncate max-w-full text-center leading-tight
+                    ${state === 'completed' ? 'text-green-600 dark:text-green-400 font-medium' : ''}
+                    ${state === 'current' ? 'text-blue-600 dark:text-blue-400 font-medium' : ''}
+                    ${state === 'pending' ? 'text-zinc-400 dark:text-zinc-500' : ''}
+                  `}
+                >
+                  {step.label}
+                </span>
+                {/* Date below label */}
+                <span
+                  className={`
+                    text-[8px] truncate max-w-full text-center leading-tight
+                    ${state === 'completed' ? 'text-green-500/70 dark:text-green-400/60' : ''}
+                    ${state === 'current' ? 'text-blue-500/70 dark:text-blue-400/60' : ''}
+                    ${state === 'pending' ? 'text-zinc-300 dark:text-zinc-600' : ''}
+                  `}
+                >
+                  {showDate ? formatShortDate(date ?? null) : '—'}
+                </span>
+              </div>
+              
+              {/* Connector line */}
+              {index < TIMELINE_STEPS.length - 1 && (
+                <div
+                  className={`
+                    h-0.5 flex-shrink-0 w-1 -mx-0.5 mt-1
+                    ${state === 'completed' ? 'bg-green-300 dark:bg-green-600' : 'bg-zinc-200 dark:bg-zinc-700'}
+                  `}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export function CampaignCard({ campaign }: CampaignCardProps) {
@@ -68,16 +194,42 @@ export function CampaignCard({ campaign }: CampaignCardProps) {
         </div>
       </div>
 
-      {/* Next step indicator */}
-      {campaign.nextExpectedStep && (
-        <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-          <span className="text-xs text-zinc-400 dark:text-zinc-500">
-            Next: <span className="text-zinc-600 dark:text-zinc-300">{campaign.nextExpectedStep}</span>
-          </span>
-        </div>
-      )}
+      {/* Timeline */}
+      <CampaignTimeline 
+        status={campaign.status} 
+        stepDates={getStepDatesFromCampaign(campaign)}
+      />
     </Link>
   );
+}
+
+// Map campaign data to step dates
+// Currently we only have lastEventAt, so we show it for the current step
+// In the future, the Campaign projection could be extended with individual step dates
+function getStepDatesFromCampaign(campaign: Campaign): StepDates {
+  const dates: StepDates = {};
+  
+  // Map the current status to its step and set the date
+  const statusToStep: Record<string, typeof TIMELINE_STEPS[number]['key']> = {
+    'inbound_shipment_recorded': 'inbound',
+    'granulation_complete': 'granulation',
+    'metal_removal_complete': 'metal',
+    'polymer_purification_complete': 'purification',
+    'extrusion_complete': 'extrusion',
+    'echa_approved': 'echa',
+    'transferred_to_rge': 'transfer',
+    'manufacturing_started': 'manufacturing',
+    'manufacturing_complete': 'manufacturing',
+    'returned_to_lego': 'return',
+    'completed': 'complete',
+  };
+  
+  const currentStepKey = statusToStep[campaign.status];
+  if (currentStepKey && campaign.lastEventAt) {
+    dates[currentStepKey] = campaign.lastEventAt;
+  }
+  
+  return dates;
 }
 
 // Helper function to format relative time

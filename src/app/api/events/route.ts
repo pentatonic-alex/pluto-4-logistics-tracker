@@ -19,6 +19,7 @@ const VALID_EVENT_TYPES: EventType[] = [
   'ManufacturingCompleted',
   'ReturnToLEGORecorded',
   'CampaignCompleted',
+  'EventCorrected', // TES-compliant correction event
 ];
 
 /**
@@ -38,7 +39,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { eventType, campaignId, eventData } = body;
+    const { eventType, campaignId, streamId: requestStreamId, eventData } = body;
+    
+    // Support both campaignId and streamId parameters
+    const providedId = campaignId || requestStreamId;
 
     // Validate event type
     if (!eventType || !VALID_EVENT_TYPES.includes(eventType)) {
@@ -78,13 +82,13 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // All other events require an existing campaign ID
-      if (!campaignId) {
+      if (!providedId) {
         return NextResponse.json(
-          { error: 'campaignId is required for non-creation events' },
+          { error: 'campaignId or streamId is required for non-creation events' },
           { status: 400 }
         );
       }
-      if (!isValidCampaignId(campaignId)) {
+      if (!isValidCampaignId(providedId)) {
         return NextResponse.json(
           { error: 'Invalid campaign ID format' },
           { status: 400 }
@@ -92,7 +96,7 @@ export async function POST(request: NextRequest) {
       }
       
       // Verify campaign exists
-      const campaign = await getCampaignById(campaignId);
+      const campaign = await getCampaignById(providedId);
       if (!campaign) {
         return NextResponse.json(
           { error: 'Campaign not found' },
@@ -100,7 +104,7 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      streamId = campaignId;
+      streamId = providedId;
     }
 
     // Append event to the event store

@@ -29,7 +29,8 @@ export type EventType =
   | 'ManufacturingStarted'
   | 'ManufacturingCompleted'
   | 'ReturnToLEGORecorded'
-  | 'CampaignCompleted';
+  | 'CampaignCompleted'
+  | 'EventCorrected'; // TES-compliant correction event
 
 // Base event structure
 export interface BaseEvent {
@@ -138,4 +139,16 @@ export interface ReturnToLEGOPayload {
 
 export interface CampaignCompletedPayload {
   completionNotes?: string;
+}
+
+// TES-compliant correction payload
+// Records what changed (was/now) for audit trail
+export interface EventCorrectionPayload {
+  correctsEventId: string;           // ID of the event being corrected
+  correctsEventType: EventType;      // Type of the event being corrected
+  reason: string;                    // Why the correction was made
+  changes: Record<string, {          // What changed
+    was: unknown;
+    now: unknown;
+  }>;
 }

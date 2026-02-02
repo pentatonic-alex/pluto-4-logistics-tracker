@@ -11,8 +11,10 @@ import type {
   ManufacturingCompletedPayload,
   ReturnToLEGOPayload,
   CampaignCompletedPayload,
+  EventCorrectionPayload,
   Campaign,
 } from '@/types';
+import { getEventsForStream } from './events';
 
 /**
  * Projection Updater
@@ -101,6 +103,9 @@ export async function updateProjection(
       break;
     case 'CampaignCompleted':
       await handleCampaignCompleted(streamId, data as CampaignCompletedPayload, timestamp);
+      break;
+    case 'EventCorrected':
+      await handleEventCorrected(streamId, data as EventCorrectionPayload, timestamp);
       break;
   }
 }
@@ -296,6 +301,98 @@ async function handleCampaignCompleted(
       updated_at = ${timestamp}
     WHERE id = ${campaignId}
   `;
+}
+
+/**
+ * Handle EventCorrected
+ * 
+ * When a correction is made, we need to update the projection if the corrected
+ * field affects the current state (e.g., weight changes).
+ * 
+ * For full TES compliance, this rebuilds the current weight from all events
+ * with corrections applied.
+ */
+async function handleEventCorrected(
+  campaignId: string,
+  payload: EventCorrectionPayload,
+  timestamp: string
+): Promise<void> {
+  // Check if any weight-related fields were corrected
+  const weightFields = ['netWeightKg', 'outputWeightKg', 'receivedWeightKg'];
+  const hasWeightCorrection = Object.keys(payload.changes).some(key => 
+    weightFields.includes(key)
+  );
+
+  if (hasWeightCorrection) {
+    // Rebuild current weight by replaying all events with corrections
+    const newWeight = await rebuildCurrentWeight(campaignId);
+    
+    await sql`
+      UPDATE campaign_projections SET
+        current_weight_kg = ${newWeight},
+        updated_at = ${timestamp}
+      WHERE id = ${campaignId}
+    `;
+  } else {
+    // Just update the timestamp
+    await sql`
+      UPDATE campaign_projections SET
+        updated_at = ${timestamp}
+      WHERE id = ${campaignId}
+    `;
+  }
+}
+
+/**
+ * Rebuild the current weight by replaying all events with corrections applied.
+ * 
+ * This is the TES-compliant way to derive current state:
+ * 1. Get all events for the campaign
+ * 2. Build a map of corrections
+ * 3. Apply events in order, using corrected values where applicable
+ * 4. Return the final weight
+ */
+async function rebuildCurrentWeight(campaignId: string): Promise<number | null> {
+  const events = await getEventsForStream('campaign', campaignId);
+  
+  // Build correction map: eventId -> { field -> corrected value }
+  const corrections = new Map<string, Record<string, unknown>>();
+  
+  events.forEach(event => {
+    if (event.eventType === 'EventCorrected') {
+      const payload = event.eventData as unknown as EventCorrectionPayload;
+      const correctedValues: Record<string, unknown> = {};
+      
+      for (const [field, change] of Object.entries(payload.changes)) {
+        correctedValues[field] = change.now;
+      }
+      
+      // Merge with any existing corrections for this event
+      const existing = corrections.get(payload.correctsEventId) || {};
+      corrections.set(payload.correctsEventId, { ...existing, ...correctedValues });
+    }
+  });
+
+  // Replay events to calculate current weight
+  let currentWeight: number | null = null;
+
+  events.forEach(event => {
+    if (event.eventType === 'EventCorrected') return; // Skip correction events
+    
+    const eventCorrections = corrections.get(event.id) || {};
+    const data = { ...event.eventData, ...eventCorrections };
+    
+    // Extract weight from relevant event types
+    if (event.eventType === 'InboundShipmentRecorded') {
+      currentWeight = (data.netWeightKg as number) || currentWeight;
+    } else if (['GranulationCompleted', 'MetalRemovalCompleted', 'PolymerPurificationCompleted', 'ExtrusionCompleted'].includes(event.eventType)) {
+      currentWeight = (data.outputWeightKg as number) || currentWeight;
+    } else if (event.eventType === 'TransferToRGERecorded' && data.receivedWeightKg) {
+      currentWeight = data.receivedWeightKg as number;
+    }
+  });
+
+  return currentWeight;
 }
 
 /**

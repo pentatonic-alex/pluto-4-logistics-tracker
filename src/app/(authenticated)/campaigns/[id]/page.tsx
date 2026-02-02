@@ -130,7 +130,10 @@ export default async function CampaignDetailPage({ params }: PageProps) {
 
       {/* Event timeline */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-        <EventTimeline events={events} />
+        <EventTimeline 
+          events={events} 
+          campaignId={id}
+        />
       </div>
 
       {/* Campaign metadata footer */}
