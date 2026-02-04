@@ -1,66 +1,107 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { CampaignCard } from '@/components/CampaignCard';
 import { SkeletonCampaignCard } from '@/components/ui/Skeleton';
 import { ExportButton } from '@/components/ExportButton';
-import type { Campaign } from '@/types';
+import { CampaignFilters, countActiveFilters } from '@/components/CampaignFilters';
+import { FilterChips } from '@/components/FilterChips';
+import { useCampaigns, useCompletedCampaignCount } from '@/lib/hooks/useCampaigns';
+import type { CampaignFilters as CampaignFiltersType } from '@/types';
 
 type FilterTab = 'active' | 'all';
 
 export default function DashboardPage() {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [completedCount, setCompletedCount] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<FilterTab>('active');
+  const [filters, setFilters] = useState<CampaignFiltersType>({});
+  
+  // Debounced filters for API calls - use useDeferredValue for smoother UX
+  // We use a custom debounce to control the exact timing
+  const [debouncedFilters, setDebouncedFilters] = useState<CampaignFiltersType>({});
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  // Track previous tab to detect tab changes
+  const prevTabRef = useRef<FilterTab>(activeTab);
 
-  const fetchCampaigns = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // Combined filters including tab selection - memoized to prevent unnecessary re-renders
+  const effectiveFilters: CampaignFiltersType = useMemo(() => ({
+    ...debouncedFilters,
+    // Only set status from tab if not overridden by specific status filter
+    ...(activeTab === 'active' && !debouncedFilters.status ? { status: 'active' as const } : {}),
+  }), [debouncedFilters, activeTab]);
 
-    try {
-      const statusParam = activeTab === 'all' ? '' : `?status=${activeTab}`;
-      const response = await fetch(`/api/campaigns${statusParam}`);
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch campaigns');
-      }
-
-      const data = await response.json();
-      setCampaigns(data.campaigns);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab]);
-
+  // Use SWR for fetching campaigns - handles race conditions and caching automatically
+  const { campaigns, isLoading, isValidating, error, mutate } = useCampaigns({
+    filters: effectiveFilters,
+  });
+  
   // Fetch completed count for archive link
-  useEffect(() => {
-    async function fetchCompletedCount() {
-      try {
-        const response = await fetch('/api/campaigns?status=completed');
-        if (response.ok) {
-          const data = await response.json();
-          setCompletedCount(data.campaigns.length);
-        }
-      } catch {
-        // Silently fail - not critical
-      }
-    }
-    fetchCompletedCount();
-  }, []);
+  const { count: completedCount } = useCompletedCampaignCount();
 
+  // Debounce filter changes
   useEffect(() => {
-    fetchCampaigns();
-  }, [fetchCampaigns]);
+    // Check if tab changed - apply filters with minimal delay
+    const tabChanged = prevTabRef.current !== activeTab;
+    prevTabRef.current = activeTab;
+    
+    // Clear any pending debounce
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    // Use minimal delay for tab changes, 300ms for filter changes
+    // This avoids synchronous setState inside effect (React lint rule)
+    const delay = tabChanged ? 0 : 300;
+    
+    debounceRef.current = setTimeout(() => {
+      setDebouncedFilters(filters);
+    }, delay);
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [filters, activeTab]);
+
+  const handleFiltersChange = (newFilters: CampaignFiltersType) => {
+    setFilters(newFilters);
+  };
+
+  const handleRemoveFilter = (key: keyof CampaignFiltersType, subKey?: string) => {
+    const newFilters = { ...filters };
+
+    if (subKey && (key === 'dateRange' || key === 'weightRange')) {
+      const rangeValue = newFilters[key];
+      if (rangeValue && typeof rangeValue === 'object') {
+        const updated = { ...rangeValue };
+        delete updated[subKey as keyof typeof updated];
+        if (Object.keys(updated).length === 0) {
+          delete newFilters[key];
+        } else {
+          // Type assertion needed here due to the conditional nature
+          (newFilters as Record<string, unknown>)[key] = updated;
+        }
+      }
+    } else {
+      delete newFilters[key];
+    }
+
+    setFilters(newFilters);
+  };
+
+  const activeFilterCount = countActiveFilters(filters);
 
   const tabs: { key: FilterTab; label: string }[] = [
     { key: 'active', label: 'Active' },
     { key: 'all', label: 'All' },
   ];
+
+  // Show loading state only on initial load, not during revalidation
+  const showLoading = isLoading && campaigns.length === 0;
+  
+  // Show subtle loading indicator when revalidating
+  const showRevalidating = isValidating && !isLoading;
 
   return (
     <div>
@@ -69,6 +110,11 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
             Campaigns
+            {showRevalidating && (
+              <span className="ml-2 inline-flex items-center">
+                <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+              </span>
+            )}
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
             Track material through the supply chain
@@ -93,28 +139,39 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-1 mb-6 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg w-fit">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`
-              px-4 py-1.5 text-sm font-medium rounded-md transition-colors
-              ${
-                activeTab === tab.key
-                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-              }
-            `}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Filter tabs and filters */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+        <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg w-fit">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`
+                px-4 py-1.5 text-sm font-medium rounded-md transition-colors
+                ${
+                  activeTab === tab.key
+                    ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                }
+              `}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <CampaignFilters
+          filters={filters}
+          onChange={handleFiltersChange}
+          activeFilterCount={activeFilterCount}
+        />
       </div>
 
+      {/* Active filter chips */}
+      <FilterChips filters={filters} onRemove={handleRemoveFilter} />
+
       {/* Content */}
-      {loading ? (
+      {showLoading ? (
         <div className="grid gap-4">
           {/* Show 3 skeleton cards while loading */}
           <SkeletonCampaignCard />
@@ -133,10 +190,10 @@ export default function DashboardPage() {
               Failed to load campaigns
             </h3>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-              {error}
+              {error.message}
             </p>
             <button
-              onClick={fetchCampaigns}
+              onClick={() => mutate()}
               className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
             >
               Try again →
@@ -162,17 +219,32 @@ export default function DashboardPage() {
               </svg>
             </div>
             <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-1">
-              {activeTab === 'active' ? 'No active campaigns' : 'No campaigns yet'}
+              {activeFilterCount > 0 
+                ? 'No campaigns match your filters' 
+                : activeTab === 'active' 
+                  ? 'No active campaigns' 
+                  : 'No campaigns yet'}
             </h3>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-              Create your first campaign to start tracking material.
+              {activeFilterCount > 0
+                ? 'Try adjusting your filters or clearing them to see more results.'
+                : 'Create your first campaign to start tracking material.'}
             </p>
-            <Link
-              href="/campaigns/new"
-              className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-            >
-              Create a campaign →
-            </Link>
+            {activeFilterCount > 0 ? (
+              <button
+                onClick={() => setFilters({})}
+                className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+              >
+                Clear all filters →
+              </button>
+            ) : (
+              <Link
+                href="/campaigns/new"
+                className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+              >
+                Create a campaign →
+              </Link>
+            )}
           </div>
         </div>
       ) : (
@@ -184,7 +256,7 @@ export default function DashboardPage() {
       )}
 
       {/* Archive link */}
-      {!loading && !error && completedCount > 0 && activeTab === 'active' && (
+      {!showLoading && !error && completedCount > 0 && activeTab === 'active' && (
         <div className="mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-800">
           <Link
             href="/archive"

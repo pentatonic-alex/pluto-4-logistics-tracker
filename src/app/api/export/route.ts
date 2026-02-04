@@ -63,7 +63,8 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // Get campaigns by status filter
-      campaigns = await getCampaigns(statusFilter || undefined);
+      const filters = statusFilter ? { status: statusFilter } : undefined;
+      campaigns = await getCampaigns(filters);
     }
 
     if (campaigns.length === 0) {

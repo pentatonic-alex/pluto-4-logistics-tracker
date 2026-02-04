@@ -13,6 +13,7 @@ import type {
   CampaignCompletedPayload,
   EventCorrectionPayload,
   Campaign,
+  CampaignFilters,
 } from '@/types';
 import { getEventsForStream } from './events';
 
@@ -422,30 +423,110 @@ export async function getCampaignById(id: string): Promise<Campaign | null> {
 }
 
 /**
- * Get all campaigns, optionally filtered by status
+ * Get all campaigns with optional filters
+ * 
+ * Supports filtering by:
+ * - status: specific status or 'active' (non-completed)
+ * - materialType: 'PI' or 'PCR'
+ * - echaApproved: boolean
+ * - dateRange: { start?, end? } - filters by created_at
+ * - weightRange: { min?, max? } - filters by current_weight_kg
+ * - campaignCodePrefix: string - ILIKE prefix match on lego_campaign_code
  */
-export async function getCampaigns(statusFilter?: CampaignStatus | 'active'): Promise<Campaign[]> {
-  let rows;
+export async function getCampaigns(filters?: CampaignFilters): Promise<Campaign[]> {
+  // Build dynamic query with conditions
+  // We use a series of conditional queries since neon/postgres doesn't support
+  // truly dynamic query building in template literals easily
   
-  if (statusFilter === 'active') {
-    rows = await sql`
-      SELECT * FROM campaign_projections 
-      WHERE status != 'completed'
-      ORDER BY updated_at DESC
-    `;
-  } else if (statusFilter) {
-    rows = await sql`
-      SELECT * FROM campaign_projections 
-      WHERE status = ${statusFilter}
-      ORDER BY updated_at DESC
-    `;
-  } else {
-    rows = await sql`
+  // If no filters, return all
+  if (!filters || Object.keys(filters).length === 0) {
+    const rows = await sql`
       SELECT * FROM campaign_projections 
       ORDER BY updated_at DESC
     `;
+    return rows.map(mapRowToCampaign);
   }
+
+  // Build WHERE conditions
+  const conditions: string[] = [];
+  const values: unknown[] = [];
+  let paramIndex = 1;
+
+  // Status filter
+  if (filters.status === 'active') {
+    conditions.push(`status != 'completed'`);
+  } else if (filters.status) {
+    conditions.push(`status = $${paramIndex}`);
+    values.push(filters.status);
+    paramIndex++;
+  }
+
+  // Material type filter
+  if (filters.materialType) {
+    conditions.push(`material_type = $${paramIndex}`);
+    values.push(filters.materialType);
+    paramIndex++;
+  }
+
+  // ECHA approved filter
+  if (filters.echaApproved !== undefined) {
+    conditions.push(`echa_approved = $${paramIndex}`);
+    values.push(filters.echaApproved);
+    paramIndex++;
+  }
+
+  // Date range filter (on created_at)
+  if (filters.dateRange?.start) {
+    conditions.push(`created_at >= $${paramIndex}`);
+    values.push(filters.dateRange.start);
+    paramIndex++;
+  }
+  if (filters.dateRange?.end) {
+    conditions.push(`created_at <= $${paramIndex}`);
+    values.push(filters.dateRange.end);
+    paramIndex++;
+  }
+
+  // Weight range filter
+  if (filters.weightRange?.min !== undefined) {
+    conditions.push(`current_weight_kg >= $${paramIndex}`);
+    values.push(filters.weightRange.min);
+    paramIndex++;
+  }
+  if (filters.weightRange?.max !== undefined) {
+    conditions.push(`current_weight_kg <= $${paramIndex}`);
+    values.push(filters.weightRange.max);
+    paramIndex++;
+  }
+
+  // Campaign code prefix filter
+  // Escape ILIKE special characters (%, _, \) to prevent pattern injection
+  if (filters.campaignCodePrefix) {
+    conditions.push(`lego_campaign_code ILIKE $${paramIndex}`);
+    const escapedPrefix = filters.campaignCodePrefix
+      .replace(/\\/g, '\\\\')  // Escape backslashes first
+      .replace(/%/g, '\\%')    // Escape percent signs
+      .replace(/_/g, '\\_');   // Escape underscores
+    values.push(`${escapedPrefix}%`);
+    paramIndex++;
+  }
+
+  // If no conditions were added, return all
+  if (conditions.length === 0) {
+    const rows = await sql`
+      SELECT * FROM campaign_projections 
+      ORDER BY updated_at DESC
+    `;
+    return rows.map(mapRowToCampaign);
+  }
+
+  // Execute query with dynamic conditions using parameterized query
+  // This is safe because we're using parameterized values and controlled condition strings
+  const whereClause = conditions.join(' AND ');
+  const query = `SELECT * FROM campaign_projections WHERE ${whereClause} ORDER BY updated_at DESC`;
   
+  // Use sql.query() for dynamic queries with neon driver
+  const rows = await sql.query(query, values);
   return rows.map(mapRowToCampaign);
 }
 

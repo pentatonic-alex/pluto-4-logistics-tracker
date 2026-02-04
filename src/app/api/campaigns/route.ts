@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getCampaigns } from '@/lib/projections';
-import type { CampaignStatus } from '@/types';
+import { parseCampaignFilters } from '@/lib/validation/campaigns';
+import type { CampaignFilters } from '@/types';
 
 /**
  * GET /api/campaigns
@@ -10,6 +11,13 @@ import type { CampaignStatus } from '@/types';
  * 
  * Query params:
  *   - status: Filter by status ('active' for non-completed, or specific status)
+ *   - materialType: Filter by material type ('PI' or 'PCR')
+ *   - echaApproved: Filter by ECHA approval ('true' or 'false')
+ *   - dateFrom: Filter by created_at >= date (ISO string)
+ *   - dateTo: Filter by created_at <= date (ISO string)
+ *   - weightMin: Filter by current_weight_kg >= value
+ *   - weightMax: Filter by current_weight_kg <= value
+ *   - campaignCodePrefix: Filter by LEGO campaign code prefix
  */
 export async function GET(request: NextRequest) {
   // Verify authentication
@@ -20,37 +28,70 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const statusParam = searchParams.get('status');
     
-    // Validate status parameter
-    const validStatuses: (CampaignStatus | 'active')[] = [
-      'active',
-      'created',
-      'inbound_shipment_recorded',
-      'granulation_complete',
-      'metal_removal_complete',
-      'polymer_purification_complete',
-      'extrusion_complete',
-      'echa_approved',
-      'transferred_to_rge',
-      'manufacturing_started',
-      'manufacturing_complete',
-      'returned_to_lego',
-      'completed',
-    ];
-
-    let statusFilter: CampaignStatus | 'active' | undefined;
-    if (statusParam) {
-      if (!validStatuses.includes(statusParam as CampaignStatus | 'active')) {
-        return NextResponse.json(
-          { error: `Invalid status filter. Valid values: ${validStatuses.join(', ')}` },
-          { status: 400 }
-        );
+    // Validate query parameters using Zod schema
+    const parseResult = parseCampaignFilters(searchParams);
+    
+    if (!parseResult.success) {
+      // Format Zod errors into a user-friendly message
+      const errors = parseResult.error.issues.map((issue) => ({
+        field: issue.path.join('.'),
+        message: issue.message,
+      }));
+      
+      return NextResponse.json(
+        { 
+          error: 'Invalid query parameters',
+          details: errors,
+        },
+        { status: 400 }
+      );
+    }
+    
+    const validated = parseResult.data;
+    
+    // Build filters object from validated params
+    const filters: CampaignFilters = {};
+    
+    if (validated.status) {
+      filters.status = validated.status;
+    }
+    
+    if (validated.materialType) {
+      filters.materialType = validated.materialType;
+    }
+    
+    if (validated.echaApproved !== undefined) {
+      filters.echaApproved = validated.echaApproved;
+    }
+    
+    // Build date range if either date is provided
+    if (validated.dateFrom || validated.dateTo) {
+      filters.dateRange = {};
+      if (validated.dateFrom) {
+        filters.dateRange.start = validated.dateFrom;
       }
-      statusFilter = statusParam as CampaignStatus | 'active';
+      if (validated.dateTo) {
+        filters.dateRange.end = validated.dateTo;
+      }
+    }
+    
+    // Build weight range if either weight is provided
+    if (validated.weightMin !== undefined || validated.weightMax !== undefined) {
+      filters.weightRange = {};
+      if (validated.weightMin !== undefined) {
+        filters.weightRange.min = validated.weightMin;
+      }
+      if (validated.weightMax !== undefined) {
+        filters.weightRange.max = validated.weightMax;
+      }
+    }
+    
+    if (validated.campaignCodePrefix) {
+      filters.campaignCodePrefix = validated.campaignCodePrefix;
     }
 
-    const campaigns = await getCampaigns(statusFilter);
+    const campaigns = await getCampaigns(Object.keys(filters).length > 0 ? filters : undefined);
 
     return NextResponse.json({ campaigns });
 

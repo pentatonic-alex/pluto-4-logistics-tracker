@@ -152,3 +152,19 @@ export interface EventCorrectionPayload {
     now: unknown;
   }>;
 }
+
+// Campaign filters for list page
+export interface CampaignFilters {
+  status?: CampaignStatus | 'active';
+  materialType?: MaterialType;
+  echaApproved?: boolean;
+  dateRange?: {
+    start?: string;  // ISO date string
+    end?: string;    // ISO date string
+  };
+  weightRange?: {
+    min?: number;    // kg
+    max?: number;    // kg
+  };
+  campaignCodePrefix?: string;
+}
