@@ -1,8 +1,22 @@
 /**
  * Material Calculator Logic
  *
- * Forward calculation: Target units → Required inbound kg
- * Reverse calculation: Available kg → Possible units
+ * Calculates material requirements and environmental impact for LEGO REPLAY's
+ * circular supply chain (LEGO → MBA → RGE → LEGO).
+ *
+ * Supports two calculation modes:
+ * - Forward: Target units → Required inbound kg
+ * - Reverse: Available kg → Possible units
+ *
+ * Methodology and constants documented in:
+ * docs/brainstorms/2026-02-02-analytics-calculator-brainstorm.md
+ *
+ * Key assumptions:
+ * - Processing yields: Based on PCR plastic industry standards (granulation,
+ *   metal removal, purification, extrusion)
+ * - CO2e savings: Lifecycle analysis comparing recycled ABS (0.8 kg) vs virgin
+ *   ABS (4.8 kg) = 4.0 kg CO2e savings per unit
+ * - Product specs: From LEGO product specifications (e.g., Storage Box = 3 kg)
  */
 
 // Default yield assumptions (when no historical data available)
