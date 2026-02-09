@@ -46,7 +46,28 @@ export const CALCULATOR_DEFAULTS = {
    */
   contaminationBuffer: 0.05,
 
-  // Product presets
+  /**
+   * Product presets: Pre-configured output products with material specifications
+   *
+   * These presets allow quick calculations for common products manufactured from
+   * recycled LEGO brick material. Each preset defines:
+   *
+   * - name: Human-readable product name for display in the UI
+   * - materialKg: Amount of finished recycled material (kg) required per unit
+   *
+   * Current presets:
+   * - storageBox: 3.0 kg per unit - A storage box product made from recycled ABS plastic.
+   *   This specification represents the finished weight after all processing steps
+   *   (granulation, metal removal, purification, and extrusion).
+   *
+   * Usage: These presets populate the material calculator UI, allowing project managers
+   * to quickly estimate material requirements for target production runs without manually
+   * entering material specifications for each calculation.
+   *
+   * Note: Additional product presets can be added as new products are defined in the
+   * circular supply chain. Each preset should use actual finished material requirements
+   * from product specifications or historical manufacturing data.
+   */
   products: {
     storageBox: { name: 'Storage Box', materialKg: 3.0 },
   } as Record<string, ProductPreset>,
