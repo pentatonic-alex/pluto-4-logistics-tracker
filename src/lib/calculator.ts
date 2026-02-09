@@ -7,14 +7,44 @@
 
 // Default yield assumptions (when no historical data available)
 export const CALCULATOR_DEFAULTS = {
-  // Fallback yields when no historical data
+  /**
+   * Default yield assumptions for processing steps
+   *
+   * These fallback values are used when no historical campaign data is available.
+   * Based on typical industry performance for post-consumer recycled (PCR) plastic processing:
+   *
+   * - granulation: 0.95 (95%) - Typical yield for mechanical grinding of plastic bricks
+   *   into granules. Loss occurs from dust generation and size screening.
+   *
+   * - metalRemoval: 0.95 (95%) - Typical yield for magnetic separation to remove metal
+   *   contaminants. Loss occurs from removing material adhering to metal particles.
+   *
+   * - purification: 0.80 (80%) - Lower yield accounts for polymer quality filtering,
+   *   where off-spec material is rejected to maintain output quality standards.
+   *
+   * - extrusion: 0.95 (95%) - Typical yield for extrusion/compounding processes.
+   *   Loss occurs from startup material, purging, and edge trim.
+   *
+   * Note: Actual yields may vary by campaign and should be updated with historical
+   * data when available. The calculator uses these as conservative baseline estimates.
+   */
   yields: {
     granulation: 0.95,
     metalRemoval: 0.95,
     purification: 0.80,
     extrusion: 0.95,
   },
-  contaminationBuffer: 0.05, // 5% buffer for contamination
+
+  /**
+   * Contamination buffer: 5% safety margin
+   *
+   * Added to inbound material requirements to account for unexpected contamination
+   * in post-consumer recycled (PCR) LEGO bricks. This buffer ensures sufficient
+   * material is available even if contamination levels exceed typical expectations.
+   *
+   * User-adjustable based on material source quality and risk tolerance.
+   */
+  contaminationBuffer: 0.05,
 
   // Product presets
   products: {
