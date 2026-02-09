@@ -139,6 +139,82 @@ describe('Audit Log', () => {
       // Page 3 with limit 20 means offset 40
       expect(mockSql).toHaveBeenCalledTimes(2);
     });
+
+    it('filters by eventType', async () => {
+      const inboundShipmentCorrection = {
+        ...mockCorrectionEvent,
+        event_data: {
+          correctsEventId: 'evt_original123',
+          correctsEventType: 'InboundShipmentRecorded',
+          reason: 'Weight entry error',
+          changes: {
+            netWeightKg: { was: 100, now: 150 },
+          },
+        },
+      };
+
+      mockSql.mockResolvedValueOnce([{ total: 1 }]);
+      mockSql.mockResolvedValueOnce([inboundShipmentCorrection]);
+
+      const result = await getAuditEntries({ eventType: 'InboundShipmentRecorded' });
+
+      expect(result.entries).toHaveLength(1);
+      expect(result.total).toBe(1);
+      expect(result.entries[0].correctedEventType).toBe('InboundShipmentRecorded');
+      expect(mockSql).toHaveBeenCalledTimes(2);
+    });
+
+    it('combines eventType with other filters', async () => {
+      mockSql.mockResolvedValueOnce([{ total: 1 }]);
+      mockSql.mockResolvedValueOnce([mockCorrectionEvent]);
+
+      await getAuditEntries({
+        campaignId: 'cmp_xyz789',
+        eventType: 'InboundShipmentRecorded',
+        startDate: '2026-01-01T00:00:00.000Z',
+        endDate: '2026-12-31T23:59:59.999Z',
+      });
+
+      expect(mockSql).toHaveBeenCalledTimes(2);
+    });
+
+    it('handles multiple event types in results', async () => {
+      const inboundCorrection = {
+        ...mockCorrectionEvent,
+        id: 'evt_abc123',
+        event_data: {
+          correctsEventId: 'evt_original123',
+          correctsEventType: 'InboundShipmentRecorded',
+          reason: 'Weight entry error',
+          changes: {
+            netWeightKg: { was: 100, now: 150 },
+          },
+        },
+      };
+
+      const granulationCorrection = {
+        ...mockCorrectionEvent,
+        id: 'evt_def456',
+        event_data: {
+          correctsEventId: 'evt_original456',
+          correctsEventType: 'GranulationCompleted',
+          reason: 'Process hours update',
+          changes: {
+            processHours: { was: 8, now: 10 },
+          },
+        },
+      };
+
+      mockSql.mockResolvedValueOnce([{ total: 2 }]);
+      mockSql.mockResolvedValueOnce([inboundCorrection, granulationCorrection]);
+
+      const result = await getAuditEntries();
+
+      expect(result.entries).toHaveLength(2);
+      expect(result.total).toBe(2);
+      expect(result.entries[0].correctedEventType).toBe('InboundShipmentRecorded');
+      expect(result.entries[1].correctedEventType).toBe('GranulationCompleted');
+    });
   });
 
   describe('getCampaignsForFilter', () => {

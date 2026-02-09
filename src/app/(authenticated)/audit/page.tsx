@@ -22,6 +22,23 @@ const EVENT_TYPE_LABELS: Record<EventType, string> = {
   EventCorrected: 'Correction',
 };
 
+// Event type options for dropdown (excluding EventCorrected)
+const EVENT_TYPE_OPTIONS: { value: EventType | ''; label: string }[] = [
+  { value: '', label: 'All Event Types' },
+  { value: 'CampaignCreated', label: EVENT_TYPE_LABELS.CampaignCreated },
+  { value: 'InboundShipmentRecorded', label: EVENT_TYPE_LABELS.InboundShipmentRecorded },
+  { value: 'GranulationCompleted', label: EVENT_TYPE_LABELS.GranulationCompleted },
+  { value: 'MetalRemovalCompleted', label: EVENT_TYPE_LABELS.MetalRemovalCompleted },
+  { value: 'PolymerPurificationCompleted', label: EVENT_TYPE_LABELS.PolymerPurificationCompleted },
+  { value: 'ExtrusionCompleted', label: EVENT_TYPE_LABELS.ExtrusionCompleted },
+  { value: 'ECHAApprovalRecorded', label: EVENT_TYPE_LABELS.ECHAApprovalRecorded },
+  { value: 'TransferToRGERecorded', label: EVENT_TYPE_LABELS.TransferToRGERecorded },
+  { value: 'ManufacturingStarted', label: EVENT_TYPE_LABELS.ManufacturingStarted },
+  { value: 'ManufacturingCompleted', label: EVENT_TYPE_LABELS.ManufacturingCompleted },
+  { value: 'ReturnToLEGORecorded', label: EVENT_TYPE_LABELS.ReturnToLEGORecorded },
+  { value: 'CampaignCompleted', label: EVENT_TYPE_LABELS.CampaignCompleted },
+];
+
 // Field name formatting (matching EventTimeline)
 function formatFieldName(key: string): string {
   const specialCases: Record<string, string> = {
@@ -125,6 +142,7 @@ export default function AuditPage() {
 
   // Filters
   const [selectedCampaign, setSelectedCampaign] = useState<string>('');
+  const [selectedEventType, setSelectedEventType] = useState<EventType | ''>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
 
@@ -141,9 +159,12 @@ export default function AuditPage() {
       const params = new URLSearchParams();
       params.set('page', String(page));
       params.set('limit', '20');
-      
+
       if (selectedCampaign) {
         params.set('campaignId', selectedCampaign);
+      }
+      if (selectedEventType) {
+        params.set('eventType', selectedEventType);
       }
       if (startDate) {
         params.set('startDate', new Date(startDate).toISOString());
@@ -168,7 +189,7 @@ export default function AuditPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, selectedCampaign, startDate, endDate]);
+  }, [page, selectedCampaign, selectedEventType, startDate, endDate]);
 
   // Fetch on mount and when filters/pagination change
   useEffect(() => {
@@ -178,6 +199,11 @@ export default function AuditPage() {
   // Reset to page 1 when filters change
   const handleCampaignChange = (value: string) => {
     setSelectedCampaign(value);
+    setPage(1);
+  };
+
+  const handleEventTypeChange = (value: EventType | '') => {
+    setSelectedEventType(value);
     setPage(1);
   };
 
@@ -193,12 +219,13 @@ export default function AuditPage() {
 
   const clearFilters = () => {
     setSelectedCampaign('');
+    setSelectedEventType('');
     setStartDate('');
     setEndDate('');
     setPage(1);
   };
 
-  const hasFilters = selectedCampaign || startDate || endDate;
+  const hasFilters = selectedCampaign || selectedEventType || startDate || endDate;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
@@ -229,6 +256,24 @@ export default function AuditPage() {
               {campaigns.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.code}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Event Type filter */}
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+              Event Type
+            </label>
+            <select
+              value={selectedEventType}
+              onChange={(e) => handleEventTypeChange(e.target.value as EventType | '')}
+              className="w-full px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+            >
+              {EVENT_TYPE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </select>
