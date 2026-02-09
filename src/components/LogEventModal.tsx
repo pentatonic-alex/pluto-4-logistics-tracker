@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, use, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { EventTypeSelector, getEventTypeLabel } from '@/components/EventTypeSelector';
 import { FormBanner } from '@/components/FormError';
 import { DynamicForm } from '@/components/DynamicForm';
@@ -23,12 +22,19 @@ import {
 } from '@/lib/validation';
 import type { EventType } from '@/types';
 
-interface PageProps {
-  params: Promise<{ id: string }>;
+interface LogEventModalProps {
+  campaignId: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export default function LogEventPage({ params }: PageProps) {
-  const { id: campaignId } = use(params);
+export function LogEventModal({
+  campaignId,
+  isOpen,
+  onClose,
+  onSuccess,
+}: LogEventModalProps) {
   const router = useRouter();
   const { showToast } = useToast();
 
@@ -41,6 +47,22 @@ export default function LogEventPage({ params }: PageProps) {
 
   // Get fields for selected event type
   const fields: FieldConfig[] = selectedEventType ? EVENT_FORM_FIELDS[selectedEventType] || [] : [];
+
+  // Reset form state
+  const resetForm = useCallback(() => {
+    setSelectedEventType('');
+    setFormData({});
+    setFieldErrors([]);
+    setTouched({});
+    setLoading(false);
+    setError(null);
+  }, []);
+
+  // Handle close with reset
+  const handleClose = useCallback(() => {
+    resetForm();
+    onClose();
+  }, [resetForm, onClose]);
 
   // Validate a single field
   const validateField = useCallback((fieldName: string, value: string, allData: Record<string, string>): ValidationError[] => {
@@ -235,7 +257,10 @@ export default function LogEventPage({ params }: PageProps) {
       }
 
       showToast('success', `${getEventTypeLabel(selectedEventType)} logged successfully`);
-      router.push(`/campaigns/${campaignId}`);
+      resetForm();
+      onClose();
+      onSuccess?.();
+      router.refresh();
     } catch {
       // Network error
       showToast('error', 'Unable to connect to server. Please check your connection.', 'Network Error');
@@ -243,100 +268,125 @@ export default function LogEventPage({ params }: PageProps) {
     }
   }
 
+  // Handle backdrop click
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      handleClose();
+    }
+  };
+
+  if (!isOpen) return null;
+
   return (
-    <div className="max-w-xl mx-auto px-4 sm:px-6 py-8">
-      {/* Header with back link */}
-      <div className="mb-8">
-        <Link
-          href={`/campaigns/${campaignId}`}
-          className="inline-flex items-center gap-1 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 mb-4"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to campaign
-        </Link>
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
-          Log Event
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-          Record a new event for this campaign
-        </p>
-      </div>
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div
+        className="flex min-h-full items-center justify-center p-4"
+        onClick={handleBackdropClick}
+      >
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 bg-black/50 transition-opacity"
+          aria-hidden="true"
+        />
 
-      {/* Form */}
-      <form onSubmit={handleSubmit}>
-        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-6">
-          {/* Form-level error banner */}
-          {error && (
-            <FormBanner
-              title="Failed to log event"
-              message={error}
-              onDismiss={() => setError(null)}
-            />
-          )}
-
-          {/* Event Type Selector */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              Event Type <span className="text-red-500">*</span>
-            </label>
-            <EventTypeSelector
-              value={selectedEventType}
-              onChange={handleEventTypeChange}
-              showDescriptions
-            />
+        {/* Modal */}
+        <div className="relative bg-white dark:bg-zinc-900 rounded-lg shadow-xl max-w-xl w-full p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+              Log Event
+            </h3>
+            <button
+              onClick={handleClose}
+              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+              aria-label="Close modal"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
-          {/* Dynamic form fields */}
-          {selectedEventType && fields.length > 0 && (
-            <>
-              <hr className="border-zinc-200 dark:border-zinc-700" />
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+            Record a new event for this campaign
+          </p>
 
+          {/* Form */}
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-6">
+              {/* Form-level error banner */}
+              {error && (
+                <FormBanner
+                  title="Failed to log event"
+                  message={error}
+                  onDismiss={() => setError(null)}
+                />
+              )}
+
+              {/* Event Type Selector */}
               <div>
-                <h2 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-4">
-                  {getEventTypeLabel(selectedEventType)} Details
-                </h2>
-                <DynamicForm
-                  fields={fields}
-                  formData={formData}
-                  fieldErrors={fieldErrors}
-                  touched={touched}
-                  onChange={handleFieldChange}
-                  onBlur={handleBlur}
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  Event Type <span className="text-red-500">*</span>
+                </label>
+                <EventTypeSelector
+                  value={selectedEventType}
+                  onChange={handleEventTypeChange}
+                  showDescriptions
                 />
               </div>
-            </>
-          )}
-        </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3 mt-6">
-          <Link
-            href={`/campaigns/${campaignId}`}
-            className="px-4 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-          >
-            Cancel
-          </Link>
-          <button
-            type="submit"
-            disabled={loading || !isFormValid()}
-            className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
-          >
-            {loading ? (
-              <>
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                Saving...
-              </>
-            ) : (
-              'Log Event'
-            )}
-          </button>
+              {/* Dynamic form fields */}
+              {selectedEventType && fields.length > 0 && (
+                <>
+                  <hr className="border-zinc-200 dark:border-zinc-700" />
+
+                  <div>
+                    <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-4">
+                      {getEventTypeLabel(selectedEventType)} Details
+                    </h4>
+                    <DynamicForm
+                      fields={fields}
+                      formData={formData}
+                      fieldErrors={fieldErrors}
+                      touched={touched}
+                      onChange={handleFieldChange}
+                      onBlur={handleBlur}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading || !isFormValid()}
+                className="px-4 py-2 text-sm font-medium text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  'Log Event'
+                )}
+              </button>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
