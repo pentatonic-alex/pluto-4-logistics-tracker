@@ -96,6 +96,50 @@ export function CampaignFilters({ filters, onChange, activeFilterCount }: Campai
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
+  // Focus trap - keep focus within panel when open
+  useEffect(() => {
+    if (!isOpen || !panelRef.current) return;
+
+    const panel = panelRef.current;
+
+    // Focus first element when panel opens
+    const focusableElements = panel.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusableElements.length > 0) {
+      focusableElements[0].focus();
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      // Get all focusable elements within the panel
+      const focusableElements = panel.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+
+      if (focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement as HTMLElement;
+
+      // Shift+Tab on first element - wrap to last
+      if (e.shiftKey && activeElement === firstElement) {
+        e.preventDefault();
+        lastElement.focus();
+      }
+      // Tab on last element - wrap to first
+      else if (!e.shiftKey && activeElement === lastElement) {
+        e.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    panel.addEventListener('keydown', handleKeyDown);
+    return () => panel.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
   return (
     <div className="mb-4">
       {/* Filter toggle button */}
@@ -138,6 +182,7 @@ export function CampaignFilters({ filters, onChange, activeFilterCount }: Campai
       {/* Collapsible filter panel */}
       {isOpen && (
         <div
+          ref={panelRef}
           id="campaign-filters-panel"
           className="mt-3 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl"
         >
