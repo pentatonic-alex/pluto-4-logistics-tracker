@@ -156,10 +156,11 @@ describe('Audit Log', () => {
       mockSql.mockResolvedValueOnce([{ total: 1 }]);
       mockSql.mockResolvedValueOnce([inboundShipmentCorrection]);
 
-      const result = await getAuditEntries({ eventType: 'EventCorrected' });
+      const result = await getAuditEntries({ eventType: 'InboundShipmentRecorded' });
 
       expect(result.entries).toHaveLength(1);
       expect(result.total).toBe(1);
+      expect(result.entries[0].correctedEventType).toBe('InboundShipmentRecorded');
       expect(mockSql).toHaveBeenCalledTimes(2);
     });
 
@@ -169,7 +170,7 @@ describe('Audit Log', () => {
 
       await getAuditEntries({
         campaignId: 'cmp_xyz789',
-        eventType: 'EventCorrected',
+        eventType: 'InboundShipmentRecorded',
         startDate: '2026-01-01T00:00:00.000Z',
         endDate: '2026-12-31T23:59:59.999Z',
       });
@@ -207,7 +208,7 @@ describe('Audit Log', () => {
       mockSql.mockResolvedValueOnce([{ total: 2 }]);
       mockSql.mockResolvedValueOnce([inboundCorrection, granulationCorrection]);
 
-      const result = await getAuditEntries({ eventType: 'EventCorrected' });
+      const result = await getAuditEntries();
 
       expect(result.entries).toHaveLength(2);
       expect(result.total).toBe(2);
