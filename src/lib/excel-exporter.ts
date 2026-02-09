@@ -1,6 +1,12 @@
 import * as XLSX from 'xlsx';
 import type { Campaign, BaseEvent, EventType, MaterialType } from '@/types';
 import { SHEET_NAMES } from './excel-parser';
+import type {
+  OverviewMetrics,
+  YieldAverages,
+  ThroughputDataPoint,
+  AnalyticsData,
+} from './analytics';
 
 /**
  * Excel Export Module
@@ -549,5 +555,99 @@ export function generateExportFilename(
   return `campaigns-export-${dateStr}.xlsx`;
 }
 
+/**
+ * Build Overview sheet data for analytics export
+ */
+function buildOverviewRows(overview: OverviewMetrics): unknown[][] {
+  return [
+    ['Metric', 'Value'],
+    ['Total Processed (kg)', overview.totalProcessedKg],
+    ['Active Campaigns', overview.activeCampaigns],
+    ['Completed Campaigns', overview.completedCampaigns],
+    ['Total Units Produced', overview.totalUnitsProduced],
+    ['CO2e Saved (kg)', overview.co2eSavedKg],
+  ];
+}
+
+/**
+ * Build Yields sheet data for analytics export
+ */
+function buildYieldsRows(yields: YieldAverages): unknown[][] {
+  return [
+    ['Step', 'Yield (%)'],
+    [
+      'Granulation',
+      yields.granulation !== null ? (yields.granulation * 100).toFixed(1) : 'N/A',
+    ],
+    [
+      'Metal Removal',
+      yields.metalRemoval !== null ? (yields.metalRemoval * 100).toFixed(1) : 'N/A',
+    ],
+    [
+      'Purification',
+      yields.purification !== null ? (yields.purification * 100).toFixed(1) : 'N/A',
+    ],
+    [
+      'Extrusion',
+      yields.extrusion !== null ? (yields.extrusion * 100).toFixed(1) : 'N/A',
+    ],
+    [
+      'Overall',
+      yields.overall !== null ? (yields.overall * 100).toFixed(1) : 'N/A',
+    ],
+  ];
+}
+
+/**
+ * Build Throughput sheet data for analytics export
+ */
+function buildThroughputRows(throughput: ThroughputDataPoint[]): unknown[][] {
+  const rows: unknown[][] = [['Month', 'Processed (kg)']];
+
+  for (const dataPoint of throughput) {
+    rows.push([dataPoint.month, dataPoint.processedKg]);
+  }
+
+  return rows;
+}
+
+/**
+ * Build analytics workbook with Overview, Yields, and Throughput sheets
+ */
+export function buildAnalyticsWorkbook(data: AnalyticsData): XLSX.WorkBook {
+  const workbook = XLSX.utils.book_new();
+
+  // Build each sheet
+  const sheets = [
+    {
+      name: 'Overview',
+      data: buildOverviewRows(data.overview),
+    },
+    {
+      name: 'Yields',
+      data: buildYieldsRows(data.yields),
+    },
+    {
+      name: 'Throughput',
+      data: buildThroughputRows(data.throughput),
+    },
+  ];
+
+  for (const sheet of sheets) {
+    const worksheet = XLSX.utils.aoa_to_sheet(sheet.data);
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheet.name);
+  }
+
+  return workbook;
+}
+
 // Re-export HEADERS for testing
 export { HEADERS };
+
+// Re-export types for API usage
+export type {
+  OverviewMetrics,
+  YieldAverages,
+  ThroughputDataPoint,
+  AnalyticsData,
+} from './analytics';
