@@ -103,7 +103,15 @@ export async function POST(request: NextRequest) {
           { status: 404 }
         );
       }
-      
+
+      // ECHA compliance gate: block transfer to RGE if ECHA approval not recorded
+      if (eventType === 'TransferToRGERecorded' && !campaign.echaApproved) {
+        return NextResponse.json(
+          { error: 'ECHA approval required before transfer to RGE. Please record ECHA approval event first.' },
+          { status: 403 }
+        );
+      }
+
       streamId = providedId;
     }
 
