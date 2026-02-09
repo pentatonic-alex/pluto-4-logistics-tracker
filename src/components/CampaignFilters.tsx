@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { CampaignFilters, CampaignStatus, MaterialType } from '@/types';
 import { STATUS_LABELS, CAMPAIGN_STATUSES } from '@/lib/constants';
 
@@ -20,6 +20,7 @@ const STATUS_OPTIONS: { value: CampaignStatus | ''; label: string }[] = [
 ];
 
 export function CampaignFilters({ filters, onChange, activeFilterCount }: CampaignFiltersProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   const updateFilter = <K extends keyof CampaignFilters>(
