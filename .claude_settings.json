@@ -1,0 +1,39 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read(./**)",
+      "Write(./**)",
+      "Edit(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "Read(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/005-create-user-guide-for-excel-import-export-feature/**)",
+      "Write(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/005-create-user-guide-for-excel-import-export-feature/**)",
+      "Edit(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/005-create-user-guide-for-excel-import-export-feature/**)",
+      "Glob(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/005-create-user-guide-for-excel-import-export-feature/**)",
+      "Grep(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/005-create-user-guide-for-excel-import-export-feature/**)",
+      "Read(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/005-create-user-guide-for-excel-import-export-feature/.auto-claude/specs/005-create-user-guide-for-excel-import-export-feature/**)",
+      "Write(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/005-create-user-guide-for-excel-import-export-feature/.auto-claude/specs/005-create-user-guide-for-excel-import-export-feature/**)",
+      "Edit(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/005-create-user-guide-for-excel-import-export-feature/.auto-claude/specs/005-create-user-guide-for-excel-import-export-feature/**)",
+      "Read(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/**)",
+      "Write(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/**)",
+      "Edit(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/**)",
+      "Glob(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/**)",
+      "Grep(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/**)",
+      "Bash(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "mcp__context7__resolve-library-id(*)",
+      "mcp__context7__get-library-docs(*)",
+      "mcp__graphiti-memory__search_nodes(*)",
+      "mcp__graphiti-memory__search_facts(*)",
+      "mcp__graphiti-memory__add_episode(*)",
+      "mcp__graphiti-memory__get_episodes(*)",
+      "mcp__graphiti-memory__get_entity_edge(*)"
+    ]
+  }
+}
