@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { CampaignFilters, CampaignStatus, MaterialType } from '@/types';
 import { STATUS_LABELS, CAMPAIGN_STATUSES } from '@/lib/constants';
 
@@ -21,6 +21,7 @@ const STATUS_OPTIONS: { value: CampaignStatus | ''; label: string }[] = [
 
 export function CampaignFilters({ filters, onChange, activeFilterCount }: CampaignFiltersProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   const updateFilter = <K extends keyof CampaignFilters>(
@@ -79,10 +80,27 @@ export function CampaignFilters({ filters, onChange, activeFilterCount }: Campai
     updateFilter('campaignCodePrefix', value || undefined);
   };
 
+  // Handle Escape key to close panel and return focus
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setIsOpen(false);
+        buttonRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
   return (
     <div className="mb-4">
       {/* Filter toggle button */}
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-controls="campaign-filters-panel"

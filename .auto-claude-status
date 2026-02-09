@@ -1,0 +1,25 @@
+{
+  "active": true,
+  "spec": "010-add-focus-trap-and-escape-key-handling-to-filter-p",
+  "state": "building",
+  "subtasks": {
+    "completed": 1,
+    "total": 5,
+    "in_progress": 1,
+    "failed": 0
+  },
+  "phase": {
+    "current": "Add Focus Trap and Keyboard Handling",
+    "id": null,
+    "total": 4
+  },
+  "workers": {
+    "active": 0,
+    "max": 1
+  },
+  "session": {
+    "number": 3,
+    "started_at": "2026-02-09T14:48:24.172310"
+  },
+  "last_update": "2026-02-09T14:54:34.338350"
+}
