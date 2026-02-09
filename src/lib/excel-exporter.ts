@@ -68,6 +68,12 @@ interface ManufacturingEventData {
   actualPickupDate?: string;
 }
 
+interface ECHAApprovalEventData {
+  approvedBy?: string;
+  approvalDate?: string;
+  notes?: string;
+}
+
 // Header rows for each sheet (must match parser column order)
 const HEADERS = {
   INBOUND_SHIPMENT: [
@@ -157,6 +163,13 @@ const HEADERS = {
     'Delivery Location',
     'ECHA Complete',
     'Delivery Date',
+    'Notes',
+  ],
+  ECHA_COMPLIANCE: [
+    'Campaign Code',
+    'ECHA Status',
+    'Approval Date',
+    'Approved By',
     'Notes',
   ],
   TRANSFER_MBA_RGE: [
@@ -409,6 +422,45 @@ function buildExtrusionRows(
 }
 
 /**
+ * Build ECHA Compliance sheet data
+ */
+function buildEchaComplianceRows(
+  campaigns: Campaign[],
+  eventsMap: Map<string, BaseEvent[]>
+): unknown[][] {
+  const rows: unknown[][] = [[...HEADERS.ECHA_COMPLIANCE]];
+
+  for (const campaign of campaigns) {
+    const events = eventsMap.get(campaign.id) || [];
+    const echaEvents = getEventsByType(events, 'ECHAApprovalRecorded');
+
+    if (echaEvents.length === 0) {
+      // Campaign without ECHA approval
+      rows.push([
+        campaign.legoCampaignCode,
+        campaign.echaApproved ? 'Approved' : 'Pending',
+        undefined,
+        undefined,
+        undefined,
+      ]);
+    } else {
+      // Use the most recent ECHA approval event
+      const latestEvent = echaEvents[echaEvents.length - 1];
+      const data = latestEvent.eventData as ECHAApprovalEventData;
+      rows.push([
+        campaign.legoCampaignCode,
+        'Approved',
+        formatDate(data.approvalDate),
+        data.approvedBy,
+        data.notes,
+      ]);
+    }
+  }
+
+  return rows;
+}
+
+/**
  * Build Transfer MBA-RGE sheet data
  */
 function buildTransferRows(
@@ -505,6 +557,10 @@ export function buildCampaignWorkbook(
     {
       name: SHEET_NAMES.EXTRUSION,
       data: buildExtrusionRows(campaigns, eventsMap),
+    },
+    {
+      name: SHEET_NAMES.ECHA_COMPLIANCE,
+      data: buildEchaComplianceRows(campaigns, eventsMap),
     },
     {
       name: SHEET_NAMES.TRANSFER_MBA_RGE,

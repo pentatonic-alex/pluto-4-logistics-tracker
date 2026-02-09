@@ -8,6 +8,7 @@ export const SHEET_NAMES = {
   METAL_REMOVAL: 'Metal Removal',
   POLYMER_PURIFICATION: 'Polymer purification',
   EXTRUSION: 'Extrusion',
+  ECHA_COMPLIANCE: 'ECHA Compliance',
   TRANSFER_MBA_RGE: 'Transfer MBA-RGE',
   RGE_MANUFACTURING: 'RGE Manufacturing',
 } as const;
