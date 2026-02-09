@@ -2,14 +2,33 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getAuditEntries, getCampaignsForFilter, type AuditResponse } from '@/lib/audit';
 import { isValidCampaignId } from '@/lib/ids';
+import type { EventType } from '@/types';
+
+// Valid event types for filtering
+const VALID_EVENT_TYPES: EventType[] = [
+  'CampaignCreated',
+  'InboundShipmentRecorded',
+  'GranulationCompleted',
+  'MetalRemovalCompleted',
+  'PolymerPurificationCompleted',
+  'ExtrusionCompleted',
+  'ECHAApprovalRecorded',
+  'TransferToRGERecorded',
+  'ManufacturingStarted',
+  'ManufacturingCompleted',
+  'ReturnToLEGORecorded',
+  'CampaignCompleted',
+  'EventCorrected',
+];
 
 /**
  * GET /api/audit
- * 
+ *
  * Fetch paginated audit log entries (EventCorrected events).
- * 
+ *
  * Query Parameters:
  * - campaignId (optional): Filter by campaign ID
+ * - eventType (optional): Filter by the type of event that was corrected
  * - startDate (optional): ISO date string, filter corrections on or after
  * - endDate (optional): ISO date string, filter corrections on or before
  * - page (optional, default: 1): Page number
@@ -27,6 +46,7 @@ export async function GET(request: NextRequest) {
     
     // Parse query parameters
     const campaignId = searchParams.get('campaignId') || undefined;
+    const eventTypeParam = searchParams.get('eventType') || undefined;
     const startDate = searchParams.get('startDate') || undefined;
     const endDate = searchParams.get('endDate') || undefined;
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
@@ -38,6 +58,18 @@ export async function GET(request: NextRequest) {
         { error: 'Invalid campaign ID format' },
         { status: 400 }
       );
+    }
+
+    // Validate event type if provided
+    let eventType: EventType | undefined = undefined;
+    if (eventTypeParam) {
+      if (!VALID_EVENT_TYPES.includes(eventTypeParam as EventType)) {
+        return NextResponse.json(
+          { error: `Invalid eventType. Must be one of: ${VALID_EVENT_TYPES.join(', ')}` },
+          { status: 400 }
+        );
+      }
+      eventType = eventTypeParam as EventType;
     }
 
     // Validate dates if provided
@@ -57,7 +89,7 @@ export async function GET(request: NextRequest) {
     // Fetch audit entries and campaigns in parallel
     const [auditResult, campaigns] = await Promise.all([
       getAuditEntries(
-        { campaignId, startDate, endDate },
+        { campaignId, eventType, startDate, endDate },
         { page, limit }
       ),
       getCampaignsForFilter(),
