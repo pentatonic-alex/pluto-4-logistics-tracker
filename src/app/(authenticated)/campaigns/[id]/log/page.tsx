@@ -4,258 +4,27 @@ import { useState, use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { EventTypeSelector, getEventTypeLabel } from '@/components/EventTypeSelector';
-import { FormError, FormBanner } from '@/components/FormError';
+import { FormBanner } from '@/components/FormError';
+import { DynamicForm } from '@/components/DynamicForm';
 import { useToast } from '@/components/Toast';
+import {
+  EVENT_FORM_FIELDS,
+  DATE_ORDER_VALIDATIONS,
+  formToEventData,
+  type FieldConfig,
+} from '@/lib/event-form';
 import {
   validateRequired,
   validateWeight,
   validatePositiveNumber,
   validateDate,
   validateDateOrder,
-  getFieldError,
   type ValidationError,
 } from '@/lib/validation';
 import type { EventType } from '@/types';
 
 interface PageProps {
   params: Promise<{ id: string }>;
-}
-
-// Field definitions for each event type
-type FieldType = 'text' | 'number' | 'date' | 'textarea';
-
-interface FieldConfig {
-  name: string;
-  label: string;
-  type: FieldType;
-  required?: boolean;
-  placeholder?: string;
-  hint?: string;
-  step?: string;
-  validationType?: 'weight' | 'positiveNumber' | 'date';
-}
-
-// Event type to form fields mapping (excludes CampaignCreated)
-const EVENT_FORM_FIELDS: Partial<Record<EventType, FieldConfig[]>> = {
-  InboundShipmentRecorded: [
-    { name: 'grossWeightKg', label: 'Gross Weight (kg)', type: 'number', required: true, placeholder: '0.00', step: '0.01', validationType: 'weight' },
-    { name: 'netWeightKg', label: 'Net Weight (kg)', type: 'number', required: true, placeholder: '0.00', step: '0.01', validationType: 'weight' },
-    { name: 'estimatedAbsKg', label: 'Estimated ABS (kg)', type: 'number', placeholder: '0.00', step: '0.01', validationType: 'positiveNumber', hint: 'Estimated ABS content' },
-    { name: 'carrier', label: 'Carrier', type: 'text', required: true, placeholder: 'e.g., DHL, FedEx' },
-    { name: 'trackingRef', label: 'Tracking Reference', type: 'text', required: true, placeholder: 'Shipment tracking number' },
-    { name: 'shipDate', label: 'Ship Date', type: 'date', required: true, validationType: 'date' },
-    { name: 'arrivalDate', label: 'Arrival Date', type: 'date', required: true, validationType: 'date' },
-  ],
-
-  GranulationCompleted: [
-    { name: 'ticketNumber', label: 'Ticket Number', type: 'text', required: true, placeholder: 'Processing ticket ID' },
-    { name: 'startingWeightKg', label: 'Starting Weight (kg)', type: 'number', required: true, placeholder: '0.00', step: '0.01', validationType: 'weight' },
-    { name: 'outputWeightKg', label: 'Output Weight (kg)', type: 'number', required: true, placeholder: '0.00', step: '0.01', validationType: 'weight' },
-    { name: 'contaminationNotes', label: 'Contamination Notes', type: 'textarea', placeholder: 'Notes about contamination found...' },
-    { name: 'polymerComposition', label: 'Polymer Composition', type: 'text', placeholder: 'e.g., 85% ABS, 15% other' },
-    { name: 'processHours', label: 'Process Hours', type: 'number', placeholder: '0.0', step: '0.1', validationType: 'positiveNumber' },
-    { name: 'wasteCode', label: 'Waste Code', type: 'text', placeholder: 'e.g., 19 12 04' },
-  ],
-
-  MetalRemovalCompleted: [
-    { name: 'ticketNumber', label: 'Ticket Number', type: 'text', required: true, placeholder: 'Processing ticket ID' },
-    { name: 'startingWeightKg', label: 'Starting Weight (kg)', type: 'number', required: true, placeholder: '0.00', step: '0.01', validationType: 'weight' },
-    { name: 'outputWeightKg', label: 'Output Weight (kg)', type: 'number', required: true, placeholder: '0.00', step: '0.01', validationType: 'weight' },
-    { name: 'processHours', label: 'Process Hours', type: 'number', placeholder: '0.0', step: '0.1', validationType: 'positiveNumber' },
-    { name: 'wasteCode', label: 'Waste Code', type: 'text', placeholder: 'e.g., 19 12 02' },
-  ],
-
-  PolymerPurificationCompleted: [
-    { name: 'ticketNumber', label: 'Ticket Number', type: 'text', required: true, placeholder: 'Processing ticket ID' },
-    { name: 'startingWeightKg', label: 'Starting Weight (kg)', type: 'number', required: true, placeholder: '0.00', step: '0.01', validationType: 'weight' },
-    { name: 'outputWeightKg', label: 'Output Weight (kg)', type: 'number', required: true, placeholder: '0.00', step: '0.01', validationType: 'weight' },
-    { name: 'polymerComposition', label: 'Polymer Composition', type: 'text', placeholder: 'e.g., 95% ABS' },
-    { name: 'wasteComposition', label: 'Waste Composition', type: 'text', placeholder: 'e.g., 5% contaminants' },
-    { name: 'processHours', label: 'Process Hours', type: 'number', placeholder: '0.0', step: '0.1', validationType: 'positiveNumber' },
-    { name: 'wasteCode', label: 'Waste Code', type: 'text', placeholder: 'e.g., 19 12 04' },
-  ],
-
-  ExtrusionCompleted: [
-    { name: 'ticketNumber', label: 'Ticket Number', type: 'text', required: true, placeholder: 'Processing ticket ID' },
-    { name: 'startingWeightKg', label: 'Starting Weight (kg)', type: 'number', required: true, placeholder: '0.00', step: '0.01', validationType: 'weight' },
-    { name: 'outputWeightKg', label: 'Output Weight (kg)', type: 'number', required: true, placeholder: '0.00', step: '0.01', validationType: 'weight' },
-    { name: 'batchNumber', label: 'Batch Number', type: 'text', required: true, placeholder: 'Pellet batch ID' },
-    { name: 'processHours', label: 'Process Hours', type: 'number', placeholder: '0.0', step: '0.1', validationType: 'positiveNumber' },
-  ],
-
-  ECHAApprovalRecorded: [
-    { name: 'approvedBy', label: 'Approved By', type: 'text', required: true, placeholder: 'Name of approving authority' },
-    { name: 'approvalDate', label: 'Approval Date', type: 'date', required: true, validationType: 'date' },
-    { name: 'notes', label: 'Notes', type: 'textarea', placeholder: 'Approval details or conditions...' },
-  ],
-
-  TransferToRGERecorded: [
-    { name: 'trackingRef', label: 'Tracking Reference', type: 'text', required: true, placeholder: 'Shipment tracking number' },
-    { name: 'carrier', label: 'Carrier', type: 'text', required: true, placeholder: 'e.g., DHL, FedEx' },
-    { name: 'shipDate', label: 'Ship Date', type: 'date', required: true, validationType: 'date' },
-    { name: 'receivedDate', label: 'Received Date', type: 'date', placeholder: 'Date received at RGE', validationType: 'date' },
-    { name: 'receivedWeightKg', label: 'Received Weight (kg)', type: 'number', placeholder: '0.00', step: '0.01', validationType: 'weight' },
-  ],
-
-  ManufacturingStarted: [
-    { name: 'poNumber', label: 'PO Number', type: 'text', required: true, placeholder: 'Purchase order number' },
-    { name: 'poQuantity', label: 'PO Quantity', type: 'number', required: true, placeholder: '0', hint: 'Number of units ordered', validationType: 'positiveNumber' },
-    { name: 'startDate', label: 'Start Date', type: 'date', required: true, validationType: 'date' },
-  ],
-
-  ManufacturingCompleted: [
-    { name: 'endDate', label: 'End Date', type: 'date', required: true, validationType: 'date' },
-    { name: 'actualQuantity', label: 'Actual Quantity', type: 'number', required: true, placeholder: '0', hint: 'Number of units produced', validationType: 'positiveNumber' },
-    { name: 'notes', label: 'Notes', type: 'textarea', placeholder: 'Production notes...' },
-  ],
-
-  ReturnToLEGORecorded: [
-    { name: 'trackingRef', label: 'Tracking Reference', type: 'text', required: true, placeholder: 'Shipment tracking number' },
-    { name: 'carrier', label: 'Carrier', type: 'text', required: true, placeholder: 'e.g., DHL, FedEx' },
-    { name: 'shipDate', label: 'Ship Date', type: 'date', required: true, validationType: 'date' },
-    { name: 'receivedDate', label: 'Received Date', type: 'date', placeholder: 'Date received at LEGO', validationType: 'date' },
-    { name: 'quantity', label: 'Quantity', type: 'number', required: true, placeholder: '0', hint: 'Number of units shipped', validationType: 'positiveNumber' },
-  ],
-
-  CampaignCompleted: [
-    { name: 'completionNotes', label: 'Completion Notes', type: 'textarea', placeholder: 'Final notes about the campaign...' },
-  ],
-};
-
-// Date field pairs for order validation
-const DATE_ORDER_VALIDATIONS: Record<string, { earlier: string; later: string }> = {
-  arrivalDate: { earlier: 'shipDate', later: 'arrivalDate' },
-  receivedDate: { earlier: 'shipDate', later: 'receivedDate' },
-};
-
-// Helper to convert form values to event data
-function formToEventData(fields: FieldConfig[], formData: Record<string, string>): Record<string, unknown> {
-  const data: Record<string, unknown> = {};
-  
-  for (const field of fields) {
-    const value = formData[field.name];
-    
-    if (value === '' || value === undefined) {
-      continue; // Skip empty optional fields
-    }
-    
-    switch (field.type) {
-      case 'number':
-        data[field.name] = parseFloat(value);
-        break;
-      default:
-        data[field.name] = value;
-    }
-  }
-  
-  return data;
-}
-
-// Dynamic form component for rendering fields
-function DynamicForm({
-  fields,
-  formData,
-  fieldErrors,
-  touched,
-  onChange,
-  onBlur,
-}: {
-  fields: FieldConfig[];
-  formData: Record<string, string>;
-  fieldErrors: ValidationError[];
-  touched: Record<string, boolean>;
-  onChange: (name: string, value: string) => void;
-  onBlur: (name: string) => void;
-}) {
-  const getInputClass = (fieldName: string) => {
-    const hasError = touched[fieldName] && getFieldError(fieldErrors, fieldName);
-    const baseClass = 'w-full px-4 py-2.5 bg-white dark:bg-zinc-800 border rounded-lg text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:border-transparent';
-    const errorClass = hasError
-      ? 'border-red-300 dark:border-red-700 focus:ring-red-500'
-      : 'border-zinc-300 dark:border-zinc-700 focus:ring-blue-500';
-    return `${baseClass} ${errorClass}`;
-  };
-
-  return (
-    <div className="space-y-4">
-      {fields.map((field) => {
-        const fieldError = touched[field.name] ? getFieldError(fieldErrors, field.name) : null;
-        
-        return (
-          <div key={field.name}>
-            <label
-              htmlFor={field.name}
-              className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2"
-            >
-              {field.label}
-              {field.required ? (
-                <span className="text-red-500 ml-1">*</span>
-              ) : (
-                <span className="text-zinc-400 dark:text-zinc-500 font-normal ml-2">(optional)</span>
-              )}
-            </label>
-
-            {field.type === 'textarea' ? (
-              <textarea
-                id={field.name}
-                name={field.name}
-                value={formData[field.name] || ''}
-                onChange={(e) => onChange(field.name, e.target.value)}
-                onBlur={() => onBlur(field.name)}
-                placeholder={field.placeholder}
-                rows={3}
-                className={`${getInputClass(field.name)} resize-none`}
-                aria-invalid={!!fieldError}
-              />
-            ) : field.type === 'date' ? (
-              <input
-                type="date"
-                id={field.name}
-                name={field.name}
-                value={formData[field.name] || ''}
-                onChange={(e) => onChange(field.name, e.target.value)}
-                onBlur={() => onBlur(field.name)}
-                className={getInputClass(field.name)}
-                aria-invalid={!!fieldError}
-              />
-            ) : field.type === 'number' ? (
-              <input
-                type="number"
-                id={field.name}
-                name={field.name}
-                value={formData[field.name] || ''}
-                onChange={(e) => onChange(field.name, e.target.value)}
-                onBlur={() => onBlur(field.name)}
-                placeholder={field.placeholder}
-                step={field.step || 'any'}
-                min="0"
-                className={getInputClass(field.name)}
-                aria-invalid={!!fieldError}
-              />
-            ) : (
-              <input
-                type="text"
-                id={field.name}
-                name={field.name}
-                value={formData[field.name] || ''}
-                onChange={(e) => onChange(field.name, e.target.value)}
-                onBlur={() => onBlur(field.name)}
-                placeholder={field.placeholder}
-                className={getInputClass(field.name)}
-                aria-invalid={!!fieldError}
-              />
-            )}
-
-            {fieldError ? (
-              <FormError message={fieldError} />
-            ) : field.hint ? (
-              <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">{field.hint}</p>
-            ) : null}
-          </div>
-        );
-      })}
-    </div>
-  );
 }
 
 export default function LogEventPage({ params }: PageProps) {
@@ -271,13 +40,13 @@ export default function LogEventPage({ params }: PageProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Get fields for selected event type
-  const fields = selectedEventType ? EVENT_FORM_FIELDS[selectedEventType] || [] : [];
+  const fields: FieldConfig[] = selectedEventType ? EVENT_FORM_FIELDS[selectedEventType] || [] : [];
 
   // Validate a single field
   const validateField = useCallback((fieldName: string, value: string, allData: Record<string, string>): ValidationError[] => {
     const errors: ValidationError[] = [];
     const field = fields.find((f) => f.name === fieldName);
-    
+
     if (!field) return errors;
 
     // Required validation
@@ -307,7 +76,7 @@ export default function LogEventPage({ params }: PageProps) {
       case 'date': {
         const dateError = validateDate(value, field.label);
         if (dateError) errors.push({ ...dateError, field: fieldName });
-        
+
         // Check date order if this field has a pair
         const orderConfig = DATE_ORDER_VALIDATIONS[fieldName];
         if (orderConfig && allData[orderConfig.earlier]) {
@@ -357,9 +126,9 @@ export default function LogEventPage({ params }: PageProps) {
   // Handle field blur - run validation
   const handleBlur = useCallback((name: string) => {
     setTouched((prev) => ({ ...prev, [name]: true }));
-    
+
     const errors = validateField(name, formData[name] || '', formData);
-    
+
     setFieldErrors((prev) => {
       // Remove existing errors for this field
       const filtered = prev.filter((e) => e.field !== name);
@@ -372,7 +141,7 @@ export default function LogEventPage({ params }: PageProps) {
   const handleFieldChange = useCallback((name: string, value: string) => {
     const newData = { ...formData, [name]: value };
     setFormData(newData);
-    
+
     // Re-validate if field was touched
     if (touched[name]) {
       const errors = validateField(name, value, newData);
@@ -387,16 +156,16 @@ export default function LogEventPage({ params }: PageProps) {
   const validateAll = useCallback((): boolean => {
     const allErrors: ValidationError[] = [];
     const allTouched: Record<string, boolean> = {};
-    
+
     for (const field of fields) {
       allTouched[field.name] = true;
       const errors = validateField(field.name, formData[field.name] || '', formData);
       allErrors.push(...errors);
     }
-    
+
     setFieldErrors(allErrors);
     setTouched(allTouched);
-    
+
     return allErrors.length === 0;
   }, [fields, formData, validateField]);
 
@@ -422,7 +191,7 @@ export default function LogEventPage({ params }: PageProps) {
     e.preventDefault();
 
     if (!selectedEventType) return;
-    
+
     // Validate all fields
     if (!validateAll()) {
       return;
