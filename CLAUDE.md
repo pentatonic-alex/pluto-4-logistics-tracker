@@ -99,5 +99,6 @@ bd status             # Overview
 
 ## Documentation
 
+- `docs/architecture/` - Architecture and design patterns
 - `docs/brainstorms/` - Design decisions
 - `docs/plans/` - Implementation plans
