@@ -31,6 +31,7 @@ export interface CampaignSummary {
  */
 export interface AuditFilters {
   campaignId?: string;
+  eventType?: EventType;
   startDate?: string;
   endDate?: string;
 }
@@ -64,12 +65,12 @@ export async function getAuditEntries(
   filters: AuditFilters = {},
   pagination: PaginationParams = { page: 1, limit: 20 }
 ): Promise<{ entries: AuditEntry[]; total: number }> {
-  const { campaignId, startDate, endDate } = filters;
+  const { campaignId, eventType = 'EventCorrected', startDate, endDate } = filters;
   const { page, limit } = pagination;
   const offset = (page - 1) * limit;
 
   // Use conditional queries based on which filters are provided
-  // Since neon's sql doesn't support dynamic queries well, 
+  // Since neon's sql doesn't support dynamic queries well,
   // we'll use conditional queries based on filters
 
   let countRows;
@@ -80,13 +81,13 @@ export async function getAuditEntries(
       SELECT COUNT(*) as total
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
         AND e.stream_id = ${campaignId}
         AND e.created_at >= ${startDate}::timestamp
         AND e.created_at <= ${endDate}::timestamp
     `;
     dataRows = await sql`
-      SELECT 
+      SELECT
         e.id,
         e.stream_id as campaign_id,
         cp.lego_campaign_code as campaign_code,
@@ -95,7 +96,7 @@ export async function getAuditEntries(
         e.created_at
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
         AND e.stream_id = ${campaignId}
         AND e.created_at >= ${startDate}::timestamp
         AND e.created_at <= ${endDate}::timestamp
@@ -107,12 +108,12 @@ export async function getAuditEntries(
       SELECT COUNT(*) as total
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
         AND e.stream_id = ${campaignId}
         AND e.created_at >= ${startDate}::timestamp
     `;
     dataRows = await sql`
-      SELECT 
+      SELECT
         e.id,
         e.stream_id as campaign_id,
         cp.lego_campaign_code as campaign_code,
@@ -121,7 +122,7 @@ export async function getAuditEntries(
         e.created_at
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
         AND e.stream_id = ${campaignId}
         AND e.created_at >= ${startDate}::timestamp
       ORDER BY e.created_at DESC
@@ -132,12 +133,12 @@ export async function getAuditEntries(
       SELECT COUNT(*) as total
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
         AND e.stream_id = ${campaignId}
         AND e.created_at <= ${endDate}::timestamp
     `;
     dataRows = await sql`
-      SELECT 
+      SELECT
         e.id,
         e.stream_id as campaign_id,
         cp.lego_campaign_code as campaign_code,
@@ -146,7 +147,7 @@ export async function getAuditEntries(
         e.created_at
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
         AND e.stream_id = ${campaignId}
         AND e.created_at <= ${endDate}::timestamp
       ORDER BY e.created_at DESC
@@ -157,12 +158,12 @@ export async function getAuditEntries(
       SELECT COUNT(*) as total
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
         AND e.created_at >= ${startDate}::timestamp
         AND e.created_at <= ${endDate}::timestamp
     `;
     dataRows = await sql`
-      SELECT 
+      SELECT
         e.id,
         e.stream_id as campaign_id,
         cp.lego_campaign_code as campaign_code,
@@ -171,7 +172,7 @@ export async function getAuditEntries(
         e.created_at
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
         AND e.created_at >= ${startDate}::timestamp
         AND e.created_at <= ${endDate}::timestamp
       ORDER BY e.created_at DESC
@@ -182,11 +183,11 @@ export async function getAuditEntries(
       SELECT COUNT(*) as total
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
         AND e.stream_id = ${campaignId}
     `;
     dataRows = await sql`
-      SELECT 
+      SELECT
         e.id,
         e.stream_id as campaign_id,
         cp.lego_campaign_code as campaign_code,
@@ -195,7 +196,7 @@ export async function getAuditEntries(
         e.created_at
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
         AND e.stream_id = ${campaignId}
       ORDER BY e.created_at DESC
       LIMIT ${limit} OFFSET ${offset}
@@ -205,11 +206,11 @@ export async function getAuditEntries(
       SELECT COUNT(*) as total
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
         AND e.created_at >= ${startDate}::timestamp
     `;
     dataRows = await sql`
-      SELECT 
+      SELECT
         e.id,
         e.stream_id as campaign_id,
         cp.lego_campaign_code as campaign_code,
@@ -218,7 +219,7 @@ export async function getAuditEntries(
         e.created_at
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
         AND e.created_at >= ${startDate}::timestamp
       ORDER BY e.created_at DESC
       LIMIT ${limit} OFFSET ${offset}
@@ -228,11 +229,11 @@ export async function getAuditEntries(
       SELECT COUNT(*) as total
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
         AND e.created_at <= ${endDate}::timestamp
     `;
     dataRows = await sql`
-      SELECT 
+      SELECT
         e.id,
         e.stream_id as campaign_id,
         cp.lego_campaign_code as campaign_code,
@@ -241,7 +242,7 @@ export async function getAuditEntries(
         e.created_at
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
         AND e.created_at <= ${endDate}::timestamp
       ORDER BY e.created_at DESC
       LIMIT ${limit} OFFSET ${offset}
@@ -252,10 +253,10 @@ export async function getAuditEntries(
       SELECT COUNT(*) as total
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
     `;
     dataRows = await sql`
-      SELECT 
+      SELECT
         e.id,
         e.stream_id as campaign_id,
         cp.lego_campaign_code as campaign_code,
@@ -264,7 +265,7 @@ export async function getAuditEntries(
         e.created_at
       FROM events e
       JOIN campaign_projections cp ON e.stream_id = cp.id
-      WHERE e.event_type = 'EventCorrected'
+      WHERE e.event_type = ${eventType}
       ORDER BY e.created_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `;
