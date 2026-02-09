@@ -3,6 +3,7 @@ import { MetricCard } from '@/components/analytics/MetricCard';
 import { CO2eMetric } from '@/components/analytics/CO2eMetric';
 import { YieldWaterfall } from '@/components/analytics/YieldWaterfall';
 import { ThroughputChart } from '@/components/analytics/ThroughputChart';
+import { AnalyticsExportButtons } from './AnalyticsExportButtons';
 import { CALCULATOR_DEFAULTS } from '@/lib/calculator';
 
 export const dynamic = 'force-dynamic';
@@ -18,13 +19,16 @@ export default async function AnalyticsPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
-          Analytics
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-          Supply chain performance metrics and trends
-        </p>
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
+            Analytics
+          </h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            Supply chain performance metrics and trends
+          </p>
+        </div>
+        <AnalyticsExportButtons />
       </div>
 
       {/* Overview Metrics */}
