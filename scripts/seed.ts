@@ -1,20 +1,22 @@
 /**
  * Seed Script - Create example campaigns with realistic data
- * 
+ *
  * Creates campaigns at each stage of the logistics process:
  * LEGO Warehouse → MBA (Compounder) → RGE (Manufacturer) → LEGO Warehouse
- * 
+ *
  * Run with: npx tsx --env-file=.env.local scripts/seed.ts
  */
 
+import dotenv from 'dotenv';
+import path from 'path';
+
 // Load environment variables BEFORE importing db module
-// Use require to ensure synchronous execution before imports
-require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env.local') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 import { sql } from '../src/lib/db';
 import { appendEvent } from '../src/lib/events';
 import { updateProjection } from '../src/lib/projections';
-import { generateCampaignId, generateEventId } from '../src/lib/ids';
+import { generateCampaignId } from '../src/lib/ids';
 import type { EventType } from '../src/types';
 
 interface SeedCampaign {

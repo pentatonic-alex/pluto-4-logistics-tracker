@@ -1,0 +1,39 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read(./**)",
+      "Write(./**)",
+      "Edit(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "Read(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/002-logging-an-event-should-open-a-picker-not-navigate/**)",
+      "Write(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/002-logging-an-event-should-open-a-picker-not-navigate/**)",
+      "Edit(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/002-logging-an-event-should-open-a-picker-not-navigate/**)",
+      "Glob(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/002-logging-an-event-should-open-a-picker-not-navigate/**)",
+      "Grep(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/002-logging-an-event-should-open-a-picker-not-navigate/**)",
+      "Read(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/002-logging-an-event-should-open-a-picker-not-navigate/.auto-claude/specs/002-logging-an-event-should-open-a-picker-not-navigate/**)",
+      "Write(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/002-logging-an-event-should-open-a-picker-not-navigate/.auto-claude/specs/002-logging-an-event-should-open-a-picker-not-navigate/**)",
+      "Edit(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/worktrees/tasks/002-logging-an-event-should-open-a-picker-not-navigate/.auto-claude/specs/002-logging-an-event-should-open-a-picker-not-navigate/**)",
+      "Read(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/**)",
+      "Write(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/**)",
+      "Edit(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/**)",
+      "Glob(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/**)",
+      "Grep(/Users/alex/pentatonic/projects/pluto-4-logistics-tracker autoclaude copy/.auto-claude/**)",
+      "Bash(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "mcp__context7__resolve-library-id(*)",
+      "mcp__context7__get-library-docs(*)",
+      "mcp__graphiti-memory__search_nodes(*)",
+      "mcp__graphiti-memory__search_facts(*)",
+      "mcp__graphiti-memory__add_episode(*)",
+      "mcp__graphiti-memory__get_episodes(*)",
+      "mcp__graphiti-memory__get_entity_edge(*)"
+    ]
+  }
+}
