@@ -83,7 +83,7 @@ describe('ECHA Compliance Gate', () => {
     (updateProjection as Mock).mockResolvedValue(undefined);
   });
 
-  describe('blocks TransferToRGE when ECHA not approved', () => {
+  describe('blocks RGE events when ECHA not approved', () => {
     it('returns 403 error when campaign has echaApproved = false', async () => {
       const campaign = createMockCampaign({ echaApproved: false });
       (getCampaignById as Mock).mockResolvedValue(campaign);
@@ -103,7 +103,7 @@ describe('ECHA Compliance Gate', () => {
 
       expect(response.status).toBe(403);
       expect(responseData.error).toBe(
-        'ECHA approval required before transfer to RGE. Please record ECHA approval event first.'
+        'ECHA approval required before RGE operations. Please record ECHA approval event first.'
       );
       expect(appendEvent).not.toHaveBeenCalled();
       expect(updateProjection).not.toHaveBeenCalled();
@@ -127,9 +127,80 @@ describe('ECHA Compliance Gate', () => {
 
       expect(getCampaignById).toHaveBeenCalledWith(campaign.id);
     });
+
+    it('blocks ManufacturingStarted when campaign has echaApproved = false', async () => {
+      const campaign = createMockCampaign({ echaApproved: false });
+      (getCampaignById as Mock).mockResolvedValue(campaign);
+
+      const request = createMockRequest({
+        eventType: 'ManufacturingStarted',
+        campaignId: campaign.id,
+        eventData: {
+          poNumber: 'PO-123',
+          startDate: '2026-01-22T00:00:00Z',
+          poQuantity: 10000,
+        },
+      });
+
+      const response = await POST(request);
+      const responseData = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(responseData.error).toBe(
+        'ECHA approval required before RGE operations. Please record ECHA approval event first.'
+      );
+      expect(appendEvent).not.toHaveBeenCalled();
+    });
+
+    it('blocks ManufacturingCompleted when campaign has echaApproved = false', async () => {
+      const campaign = createMockCampaign({ echaApproved: false });
+      (getCampaignById as Mock).mockResolvedValue(campaign);
+
+      const request = createMockRequest({
+        eventType: 'ManufacturingCompleted',
+        campaignId: campaign.id,
+        eventData: {
+          completionDate: '2026-01-25T00:00:00Z',
+          unitsProduced: 9500,
+        },
+      });
+
+      const response = await POST(request);
+      const responseData = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(responseData.error).toBe(
+        'ECHA approval required before RGE operations. Please record ECHA approval event first.'
+      );
+      expect(appendEvent).not.toHaveBeenCalled();
+    });
+
+    it('blocks ReturnToLEGORecorded when campaign has echaApproved = false', async () => {
+      const campaign = createMockCampaign({ echaApproved: false });
+      (getCampaignById as Mock).mockResolvedValue(campaign);
+
+      const request = createMockRequest({
+        eventType: 'ReturnToLEGORecorded',
+        campaignId: campaign.id,
+        eventData: {
+          trackingRef: 'RETURN-001',
+          carrier: 'DHL',
+          shipDate: '2026-01-28T00:00:00Z',
+        },
+      });
+
+      const response = await POST(request);
+      const responseData = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(responseData.error).toBe(
+        'ECHA approval required before RGE operations. Please record ECHA approval event first.'
+      );
+      expect(appendEvent).not.toHaveBeenCalled();
+    });
   });
 
-  describe('allows TransferToRGE when ECHA approved', () => {
+  describe('allows RGE events when ECHA approved', () => {
     it('successfully records transfer when campaign has echaApproved = true', async () => {
       const campaign = createMockCampaign({
         echaApproved: true,
@@ -193,6 +264,51 @@ describe('ECHA Compliance Gate', () => {
       expect(response.status).toBe(201);
       expect(appendEvent).toHaveBeenCalled();
     });
+
+    it('allows ManufacturingCompleted when campaign has echaApproved = true', async () => {
+      const campaign = createMockCampaign({
+        echaApproved: true,
+        status: 'manufacturing_in_progress',
+      });
+      (getCampaignById as Mock).mockResolvedValue(campaign);
+
+      const request = createMockRequest({
+        eventType: 'ManufacturingCompleted',
+        campaignId: campaign.id,
+        eventData: {
+          completionDate: '2026-01-25T00:00:00Z',
+          unitsProduced: 9500,
+        },
+      });
+
+      const response = await POST(request);
+
+      expect(response.status).toBe(201);
+      expect(appendEvent).toHaveBeenCalled();
+    });
+
+    it('allows ReturnToLEGORecorded when campaign has echaApproved = true', async () => {
+      const campaign = createMockCampaign({
+        echaApproved: true,
+        status: 'manufacturing_complete',
+      });
+      (getCampaignById as Mock).mockResolvedValue(campaign);
+
+      const request = createMockRequest({
+        eventType: 'ReturnToLEGORecorded',
+        campaignId: campaign.id,
+        eventData: {
+          trackingRef: 'RETURN-001',
+          carrier: 'UPS',
+          shipDate: '2026-01-28T00:00:00Z',
+        },
+      });
+
+      const response = await POST(request);
+
+      expect(response.status).toBe(201);
+      expect(appendEvent).toHaveBeenCalled();
+    });
   });
 
   describe('does not affect other event types', () => {
@@ -240,7 +356,7 @@ describe('ECHA Compliance Gate', () => {
       expect(appendEvent).toHaveBeenCalled();
     });
 
-    it('allows ManufacturingStarted event without checking echaApproved', async () => {
+    it('allows ManufacturingStarted event when ECHA is approved', async () => {
       const campaign = createMockCampaign({
         echaApproved: true,
         status: 'transferred_to_rge',
@@ -396,7 +512,7 @@ describe('ECHA Compliance Gate', () => {
       const responseData = await response.json();
 
       expect(responseData.error).toContain('ECHA approval required');
-      expect(responseData.error).toContain('before transfer to RGE');
+      expect(responseData.error).toContain('before RGE operations');
       expect(responseData.error).toContain('record ECHA approval event first');
     });
   });

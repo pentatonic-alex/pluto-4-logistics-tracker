@@ -104,10 +104,12 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // ECHA compliance gate: block transfer to RGE if ECHA approval not recorded
-      if (eventType === 'TransferToRGERecorded' && !campaign.echaApproved) {
+      // ECHA compliance gate: block RGE-related events if ECHA approval not recorded
+      // RGE events include: transfer to RGE, manufacturing at RGE, and return from RGE
+      const rgeEvents = ['TransferToRGERecorded', 'ManufacturingStarted', 'ManufacturingCompleted', 'ReturnToLEGORecorded'];
+      if (rgeEvents.includes(eventType) && !campaign.echaApproved) {
         return NextResponse.json(
-          { error: 'ECHA approval required before transfer to RGE. Please record ECHA approval event first.' },
+          { error: 'ECHA approval required before RGE operations. Please record ECHA approval event first.' },
           { status: 403 }
         );
       }
