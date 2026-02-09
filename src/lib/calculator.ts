@@ -1,27 +1,104 @@
 /**
  * Material Calculator Logic
  *
- * Forward calculation: Target units → Required inbound kg
- * Reverse calculation: Available kg → Possible units
+ * Calculates material requirements and environmental impact for LEGO REPLAY's
+ * circular supply chain (LEGO → MBA → RGE → LEGO).
+ *
+ * Supports two calculation modes:
+ * - Forward: Target units → Required inbound kg
+ * - Reverse: Available kg → Possible units
+ *
+ * Methodology and constants documented in:
+ * docs/brainstorms/2026-02-02-analytics-calculator-brainstorm.md
+ *
+ * Key assumptions:
+ * - Processing yields: Based on PCR plastic industry standards (granulation,
+ *   metal removal, purification, extrusion)
+ * - CO2e savings: Lifecycle analysis comparing recycled ABS (0.8 kg) vs virgin
+ *   ABS (4.8 kg) = 4.0 kg CO2e savings per unit
+ * - Product specs: From LEGO product specifications (e.g., Storage Box = 3 kg)
  */
 
 // Default yield assumptions (when no historical data available)
 export const CALCULATOR_DEFAULTS = {
-  // Fallback yields when no historical data
+  /**
+   * Default yield assumptions for processing steps
+   *
+   * These fallback values are used when no historical campaign data is available.
+   * Based on typical industry performance for post-consumer recycled (PCR) plastic processing:
+   *
+   * - granulation: 0.95 (95%) - Typical yield for mechanical grinding of plastic bricks
+   *   into granules. Loss occurs from dust generation and size screening.
+   *
+   * - metalRemoval: 0.95 (95%) - Typical yield for magnetic separation to remove metal
+   *   contaminants. Loss occurs from removing material adhering to metal particles.
+   *
+   * - purification: 0.80 (80%) - Lower yield accounts for polymer quality filtering,
+   *   where off-spec material is rejected to maintain output quality standards.
+   *
+   * - extrusion: 0.95 (95%) - Typical yield for extrusion/compounding processes.
+   *   Loss occurs from startup material, purging, and edge trim.
+   *
+   * Note: Actual yields may vary by campaign and should be updated with historical
+   * data when available. The calculator uses these as conservative baseline estimates.
+   */
   yields: {
     granulation: 0.95,
     metalRemoval: 0.95,
     purification: 0.80,
     extrusion: 0.95,
   },
-  contaminationBuffer: 0.05, // 5% buffer for contamination
 
-  // Product presets
+  /**
+   * Contamination buffer: 5% safety margin
+   *
+   * Added to inbound material requirements to account for unexpected contamination
+   * in post-consumer recycled (PCR) LEGO bricks. This buffer ensures sufficient
+   * material is available even if contamination levels exceed typical expectations.
+   *
+   * User-adjustable based on material source quality and risk tolerance.
+   */
+  contaminationBuffer: 0.05,
+
+  /**
+   * Product presets: Pre-configured output products with material specifications
+   *
+   * These presets allow quick calculations for common products manufactured from
+   * recycled LEGO brick material. Each preset defines:
+   *
+   * - name: Human-readable product name for display in the UI
+   * - materialKg: Amount of finished recycled material (kg) required per unit
+   *
+   * Current presets:
+   * - storageBox: 3.0 kg per unit - A storage box product made from recycled ABS plastic.
+   *   This specification represents the finished weight after all processing steps
+   *   (granulation, metal removal, purification, and extrusion).
+   *
+   * Usage: These presets populate the material calculator UI, allowing project managers
+   * to quickly estimate material requirements for target production runs without manually
+   * entering material specifications for each calculation.
+   *
+   * Note: Additional product presets can be added as new products are defined in the
+   * circular supply chain. Each preset should use actual finished material requirements
+   * from product specifications or historical manufacturing data.
+   */
   products: {
     storageBox: { name: 'Storage Box', materialKg: 3.0 },
   } as Record<string, ProductPreset>,
 
-  // CO2e assumptions
+  /**
+   * CO2e emissions and savings assumptions
+   *
+   * Sources:
+   * - recycledPerUnit: Lifecycle analysis for recycled ABS plastic production
+   * - virginPerUnit: Lifecycle analysis for virgin ABS plastic production
+   * - savingsPerUnit: Calculated as virginPerUnit - recycledPerUnit = 4.8 - 0.8 = 4.0 kg CO2e savings per unit
+   * - coalLbsPerUnit: EPA coal combustion emission factors converted to tangible environmental metric
+   *
+   * These values represent the carbon footprint across the full product lifecycle,
+   * from raw material extraction through manufacturing, and enable calculation of
+   * environmental impact for sustainability reporting.
+   */
   co2e: {
     recycledPerUnit: 0.8, // kg CO2e for recycled
     virginPerUnit: 4.8, // kg CO2e for virgin plastic
