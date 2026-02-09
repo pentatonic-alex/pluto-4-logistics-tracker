@@ -184,6 +184,8 @@ export function CampaignFilters({ filters, onChange, activeFilterCount }: Campai
         <div
           ref={panelRef}
           id="campaign-filters-panel"
+          role="region"
+          aria-label="Campaign filter controls"
           className="mt-3 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
